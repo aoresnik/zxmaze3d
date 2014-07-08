@@ -2,7 +2,7 @@
 ZXMAZE3D
 ========
 
-A simple 3D demo for ZX Spectrum 8-bit computer. 
+A simple 3D demo for ZX Spectrum 8-bit computer (48k model or better). 
 
 Walls are rendered as halftone shaded solid color. No monsters yet. 
 Achieves frame rates around 10-20 FPS.
