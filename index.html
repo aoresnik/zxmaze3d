@@ -8,17 +8,31 @@
 
     <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
-    <title>Zxmaze3d</title>
+    <title>ZXMaze3D</title>
+        
+	<script src="javascripts/jdataview.js"></script>
+	<script src="javascripts/jsspeccy-core.min.js"></script>
+	<script>
+		function go() {
+			var jsspeccy = JSSpeccy('speccy', {
+				'autostart': false,
+				'autoload': true,
+				'scaleFactor': 1,
+				'audio': false,
+				'loadFile': 'files/zxmaze3d.z80'
+			});
+		}
+	</script>
   </head>
 
-  <body>
+  <body onload="go()">
 
     <!-- HEADER -->
     <div id="header_wrap" class="outer">
         <header class="inner">
           <a id="forkme_banner" href="https://github.com/andrejo/zxmaze3d">View on GitHub</a>
 
-          <h1 id="project_title">Zxmaze3d</h1>
+          <h1 id="project_title">ZXMaze3D</h1>
           <h2 id="project_tagline">A simple 3D demo for ZX Spectrum computer</h2>
 
             <section id="downloads">
@@ -32,18 +46,24 @@
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
         <h3>
-<a name="zxmaze3d" class="anchor" href="#zxmaze3d"><span class="octicon octicon-link"></span></a>zxmaze3d</h3>
+<a name="zxmaze3d" class="anchor" href="#zxmaze3d"><span class="octicon octicon-link"></span></a>Overview</h3>
 
 <p>This is a simple 3D demo for the ZX Spectrum computer. Use standard W, S, A, D keys to move around.</p>
 
-<p><a href="files/zxmaze3d.tap">Binary .TAP file</a> - run in an emulator (tested under FUSE and EmuZWin).</p>
+<p><a href="files/zxmaze3d.tap">Download</a> - Binary .TAP file, run this in an emulator (tested under <a href="http://fuse-emulator.sourceforge.net/">FUSE</a>
+ and <a href="http://kolmck.net/apps/EmuZ/EmuZWin_Eng.htm">EmuZWin</a>).</p>
+
+        <h3>
+<a name="zxmaze3d" class="anchor" href="#zxmaze3d"><span class="octicon octicon-link"></span></a>Live preview</h3>
+        <div id="speccy"></div>
+<p>(uses the <a href="https://github.com/gasman/jsspeccy2">JSSpeccy2</a> javascript-based ZX Spectrum emulator)</p>
       </section>
     </div>
 
     <!-- FOOTER  -->
     <div id="footer_wrap" class="outer">
       <footer class="inner">
-        <p class="copyright">Zxmaze3d maintained by <a href="https://github.com/andrejo">andrejo</a></p>
+        <p class="copyright">ZXMaze3D maintained by <a href="https://github.com/andrejo">andrejo</a></p>
         <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
       </footer>
     </div>
