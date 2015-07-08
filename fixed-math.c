@@ -7,7 +7,7 @@
 #include "fixed-math.h"
 #include "tables.h"
 
-// If enabled, a faster f_sqr variant is used, but it occpuies a 
+// If enabled, a faster f_sqr variant is used, but it occupies a 
 // fixed range of addresses 60k-62k
 //#define UGLY_F_SQRT
 
@@ -18,10 +18,10 @@
 #error N_PRECALC_FACTOR is expected to be 16 by code in this file. Check if modifications are needed
 #endif
 
-// No saturation check, no early exit, expects the arg2 to be one of bottom 8 bits
-//    C_       arg1[0..7]
-//    B_:D_:E  arg2[0..23]_
-//    A_:H_:L  result[0..23]
+// No saturation check, no early exit check, expects the arg1 to be bottom 8 bits
+//    C_       arg1[7..0] (being shifted)
+//    B_:D_:E  arg2[23..0] (being shifted)
+//    A_:H_:L  product[23..0]
 #define F_MULT_ITERATION_P_16b(id) asm(\
 "	srl c\n\
 	jr nc,_f_multiply_next_bit"#id"\n\
@@ -33,19 +33,20 @@
 	rl d\n\
 	rl b\n");
 
-// Saturation check, expects the arg2 to be top 8 bits
-//    B_       arg1[8..15]
-//    C_:D_:E  arg2[0..23]_
-//    A_:H_:L  result[8..31]
+// Saturation check, early exit check, expects the arg1 to be top 8 bits
+//    B_       arg1[15..8] (being shifted)
+//    C_:D_:E  arg2[23..0] (being shifted)
+//    A_:H_:L  product[31..8]
 #define F_MULT_ITERATION_P_8b(id) asm(\
 "	srl b\n\
 	jr c, _f_multiply_bit_on"#id"\n\
 	jp nz, _f_multiply_next_bit"#id"\n\
-	; if Z and NC, then exit the loop\n\
+    ; if Z and NC, then exit the loop\n\
 	jp  _f_multiply_exit_hl\n\
 ._f_multiply_bit_on"#id"\n\
 	add hl,de\n\
 	adc c\n\
+    ; saturation, if top byte of the 32-bit product is not 0 or 255\n\
 	jp z,_f_multiply_not_satur"#id"\n\
 	cp 255\n\
 	jp nz,_f_multiply_satur_ah\n\
@@ -55,10 +56,10 @@
 	rl d\n\
 	rl c\n");
 
-// No saturation check, expects the arg2 to be only 8 bits
-//    C_       arg1[0..7]
-//    B_:D_:E  arg2[0..23]_
-//    A_:H_:L  result[0..23]
+// No saturation check, early exit check, expects the arg1 to be only 8 bits
+//    C_       arg1[7..0] (being shifted)
+//    B_:D_:E  arg2[23..0] (being shifted)
+//    A_:H_:L  product[23..0]
 #define F_MULT_ITERATION_P_8b_only(id) asm(\
 "	srl c\n\
 	jr c, _f_multiply_bit_on"#id"\n\
@@ -77,38 +78,27 @@ int __CALLEE__ f_multiply(int f_a, int f_b)
 {
 #asm
 ;
-; Entry variables:
-;   arg1 on DE, sign extended byte in IXH
-;   arg2 on BC (in case that is negative, arg1 and arg2 are both negated, so that it becomes nonegative)
-;                 IXL contains the number of negative args (0, 1 or 2)
+; Registers used:
+;   arg1 on A:D:E (sign extended to 24 bits)
+;   arg2 on B:C (in case that is negative, arg1 and arg2 are both negated, so that it becomes nonegative, unsigned value)
 ;
-; Result computed in AH or HL 
+; Result (bits 23..9 of the product) computed in A:H or H:L 
 ;
 ; (based on library source - l_long_mult.asm)
 ;
 
-   pop  hl	; save the return address
+   pop  hl	 ; save the return address
 
    pop	bc   ; arg2
    pop	de   ; arg1
    
-   push hl	; replace return address on stack
+   push hl	 ; replace return address on stack
 
-   bit	7,d  ; arg1 sign
-             ; z flag should be unaffected until _is arg1 negative_ comment
-             
-; sign extend arg1 (both top bytes are the same, so are stored only once in IXH)
-
-   ld   ixl,0  ; number of negative args
-   ld	ixh,0
-
-               ; is arg1 negative
+; sign extend arg1 in D:E to A:D:E
+   xor  a
+   bit	7,d   ; is arg1 negative
    jr	z,_f_multiply_arg1_nonneg
-
-; arg1  is negative (Z flag generated above at bit 7,d)   
-   dec	ixh      ; set to -1
-   inc  ixl      ; one more negative arg (arg1)
-   
+   dec	a   ; arg1  is negative, set sign extend to -1
 ._f_multiply_arg1_nonneg
 
    bit	7,b    ; arg2 sign
@@ -117,48 +107,48 @@ int __CALLEE__ f_multiply(int f_a, int f_b)
 ; ----------  code path for arg2 negative ------------
 ; negate both args, i.e. multiply each by -1, so that arg2 becomes nonnegative
 ; and then perform the algorithm for that case
-; the catch is that if the result is 0x8000, this is not representable in 16 bits,
+; the catch is that if the product is +0x0080,0000, this is not representable as signed 16 bits,
 ; but is not detected as saturation, so this case is corrected at the end
 
 ._f_multiply_neg
    
-   
-   ; absolute value, i.e. negate arg2 (B_C_), careful that -8000h becomes 8000h
-   and a					   ; clear C
+   ; absolute value, i.e. negate arg2 (B:C), careful that -80,00h becomes 80,00h
+   and a					   ; clear carry
    ld 	hl,0 
    sbc	hl,bc
    ld	b,h
    ld	c,l
    
-   ; negate arg1 (24 bit extension in E:D_E)
-   xor a					   ; clear A and carry
+   ; negate arg1 (24 bit A:D:E)
+   and a					   ; clear carry
    ld	hl,0
    sbc	hl,de
    ex   de,hl    ; only needed DE=HL
-   sbc  ixh
-   ld   ixh,a
-
-   inc  ixl   ; one more negative arg (arg2)
+   ld   h,a
+   ld   a,0
+   sbc  h
 
 _f_multiply_arg1_zero:
 
-; ----------  code path for arg2 nonnegative ------------
-; add shifted arg1 values
+; ----------  code path for arg2 non-negative ------------
+; add shifted arg1 values to product
+; arg2 is at this point unsigned 16-bit value (i.e. must be non-negative)
 
 ._f_multiply_nonneg
 
-   ld 	hl,0 ; result
-   
-   ; code path for arg2 nonneg
-   
-   xor a
-   cp b
+   inc b
+   dec b   
    jp z, _f_multiply_p_8b_only
 
-   push bc  ; save the high byte
+   ld  h,b
+   ld  l,a
+   push hl   ; save the high byte
    
 ; use B_ for arg1 byte 2, A for result byte 2
-   ld b,ixh
+   ld b,a
+   
+   xor a
+   ld  hl,0
 
 #endasm
     F_MULT_ITERATION_P_16b(1);
@@ -171,19 +161,18 @@ _f_multiply_arg1_zero:
     F_MULT_ITERATION_P_16b(8);
 #asm
 
+   ; shift and sign extend result in A:H to A:H:L 
    ld l,h
    ld h,a
-; sign extend result (trick: A contains H and is not needed anymore)
-   rla
+   rla       ; trick: A contains H and is not needed anymore
    ld a,0
    sbc a
-
+   
+   ; arg1 bits 15..0 to D:E
    ld e,d
    ld d,b
-  
-   pop bc
-
-   ld c,ixh
+   
+   pop bc    ; arg2 bits 15..9 to B, sign extended arg1 bits 23..16 to C
   
 #endasm
     F_MULT_ITERATION_P_8b(9);
@@ -195,10 +184,14 @@ _f_multiply_arg1_zero:
     F_MULT_ITERATION_P_8b(15);
     F_MULT_ITERATION_P_8b(16);
 #asm
-    ; result already in HL
+
+; the top 24 bits of product (bits 31..9) are in A:H:L, return bits 23..9
 _f_multiply_exit_hl:
 
-; fix the cases of result +0x8000 when both args negative
+; fix the cases of result +0x0080,0000 when both args negative
+    or a       ; are bits 31..23 zero, i.e. is result non-negative?
+	ret nz     ; nonzero, result is negative
+
     ld a,0x80
     cp h
     ret nz
@@ -206,18 +199,15 @@ _f_multiply_exit_hl:
     xor a
     cp l
     ret nz
-    
-    ld  a,2
-    cp  ixl
-    ; result +0x8000 when both args negative, 0x7FFF is representable
+
+    ; result +0x0080,0000 not representable, return positive saturation
     jp  z,_f_multiply_satur_noneg
     
-_f_multiply_exit_exx:
-    ret
-   
 _f_multiply_p_8b_only:
-; use B_ for arg1 byte 2, A for result byte 2
-    ld b,ixh
+    ld b,a   ; use B for arg1 bits 23..16
+    xor a
+   
+    ld  hl,0
 
 #endasm
     F_MULT_ITERATION_P_8b_only(b9);
@@ -231,9 +221,8 @@ _f_multiply_p_8b_only:
 #asm
 
 
-; the 16-bit result is in A:H
+; the middle 16 bits of the product (bits 23..9) are in A:H, return them
 _f_multiply_exit_ah:
-
     ld	l,h
     ld	h,a
 	ret
@@ -241,11 +230,10 @@ _f_multiply_exit_ah:
 ; ----------  in case of result overflow ------------
 
 ._f_multiply_satur_ah
+   ; in this case, the product overflowed 16-bits
+   ; use the sign of A (bits 31..24) which has correct sign and round to max value
    bit 7,a
    jp nz,_f_multiply_satur_neg
-
-   ; in this case, the result overflows 16-bits
-   ; the result has correct sign, but not value - round to max value
    
 ._f_multiply_satur_noneg
    ld hl,0x7FFF
