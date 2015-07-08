@@ -39,7 +39,8 @@ struct maze_vspan
 extern void span_init();
 
 /*
- * Draws the span in character-cell column cx (0..32), from line y0 (0..191) 
+ * Paints the 8-pixels wide vertical span in column cx (0..32), with Bayer halftone pattern 
+ * of intensity (but could in principle draw any other 8x8 pattern), from line y0 (0..191) 
  * to line y1 (0..191).
  * 
  * Expects y1 > y0.

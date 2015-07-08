@@ -96,10 +96,17 @@ uchar __CALLEE__ *screen_byte_for(uchar cx, uchar y);
 	ret
 #endasm
 
-
-/**
- * Draws a 8 x dy block of pattern pointed to p_pat at screen address p_scr.
- * p_scr is expected to point at the top of the span in screen memory.
+/*
+ * Paints the 8-pixels wide vertical span in column cx (0..32), with Bayer halftone pattern 
+ * of intensity (but could in principle draw any other 8x8 pattern), from line y0 (0..191) 
+ * to line y1 (0..191); y1 > y0.
+ * 
+ * Fills the specified span with halftone 4x4 pattern of intensity
+ * (supported levels are from INTENSITY_BLACK to INTENSITY_WHITE).
+ *
+ * Used for small spans, where y0 and y1 are within te same 8x8 cell.
+ *
+ * FIXME: is it really needed? Remove
  */
 uchar *draw_block_small(uchar *p_scr, uchar *p_pat, uchar y1, uchar y0);
 
@@ -154,6 +161,16 @@ _call_precompiled_span:
 	ret	
 #endasm	
 
+/*
+ * Paints the 8-pixels wide vertical span in column cx (0..32), with Bayer halftone pattern 
+ * of intensity (but could in principle draw any other 8x8 pattern), from line y0 (0..191) 
+ * to line y1 (0..191); y1 > y0.
+ * 
+ * Fills the specified span with halftone 4x4 pattern of intensity
+ * (supported levels are from INTENSITY_BLACK to INTENSITY_WHITE).
+ *
+ * Uses the precompiled unrolled loops to draw (from ht_4x4_asm_routines.h).
+ */
 void draw_span(uchar cx, uchar y0, uchar y1, uchar intensity);
 
 #asm
@@ -409,6 +426,29 @@ void draw_precompiled_span_test_patterns()
 
 #else // USE_PG_SPAN_DRAW
 
+/*
+ * Paints the 8-pixels wide vertical span in column cx (0..32), with Bayer halftone pattern 
+ * of intensity (but could in principle draw any other 8x8 pattern), from line y0 (0..191) 
+ * to line y1 (0..191); y1 > y0.
+ * 
+ * Fills the specified span with halftone 4x4 pattern of intensity
+ * (supported levels are from INTENSITY_BLACK to INTENSITY_WHITE).
+ *
+ * (this is a regular version, without precompiled unrolled loops)
+ *
+ * NOTE: Why the complexity?
+ * 
+ * In ZX Spectrum memory layout, it's slow to move pointer to a screen address to the next 
+ * line in general. But if the pointer points to a line y that is not y%8 == 7 (i.e. not the
+ * last line in a 8x8 cell), it's very fast: you only increase it by 0x100.
+ *
+ * So within a 8x8 character cell, if HL points to a screen byte, you can move to the next
+ * line with simple "INC H" instruction. This is by design (it speeds up drawing of characters
+ * and makes up a bit of lost speed because Spectrum's lacks a true text mode).
+ *
+ * This function is optimized by making it keep track where it is and uses fast advance if it 
+ * can, slow advance if it can't.
+ */
 void draw_span(uchar cx, uchar y0, uchar y1, uchar intensity);
 
 #asm
@@ -654,110 +694,54 @@ _draw_block_l00__small1:
 	
 #endasm
 
-
 /*
- * Updates the span at new heigth (assumes it has been drawn with p_span->prev_distidx)
+ * Updates the span on screen at new heigth (assumes it has been drawn with p_span->prev_distidx)
  */
-// void span_update1(struct maze_vspan *p_span)
-// {
-// 	// Making these variables static improves speed and is warranted, because
-// 	// this function is on critical path and is non-recursive
-// 	static uchar intensity, height;
-// 	static uint distidx, prev_distidx;
-// 
-// 	distidx = p_span->distidx;
-// 	prev_distidx = p_span->prev_distidx;
-// #ifndef NDEBUG
-// 	if (distidx > N_PRECALC_DRAW_DIST)
-// 	{
-// 		printf("Distance out of range: distidx=%d\n", distidx);
-// 		distidx = N_PRECALC_DRAW_DIST;
-// 	}
-// #endif
-// 
-// 	// NOTE: relies that spans are vertically symetrical
-// 	if (distidx > prev_distidx)
-// 	{
-// 		// The span is now farther away
-// 		intensity = draw_intens[distidx];
-// 	  
-// 		// White (erase)
-// 		draw_span(p_span->n, draw_heigths[prev_distidx], draw_heigths[distidx], INTENSITY_WHITE);
-// 		draw_span(p_span->n, draw_heigths1[distidx], draw_heigths1[prev_distidx], INTENSITY_WHITE);
-// 		
-// 		if (intensity != draw_intens[prev_distidx])
-// 		{
-// 			draw_span(p_span->n, draw_heigths[distidx], draw_heigths1[distidx], intensity);
-// 		}
-// 		
-// 		p_span->prev_distidx = distidx;
-// 	}
-// 	else if (distidx < prev_distidx)
-// 	{
-// 		// The span is now closer
-// 		intensity = draw_intens[distidx];
-// 		
-// 		if (intensity != draw_intens[prev_distidx])
-// 		{
-// 			draw_span(p_span->n, draw_heigths[distidx], draw_heigths1[distidx], intensity);
-// 		}
-// 		else
-// 		{
-// 			// Extend existing span
-// 			draw_span(p_span->n, draw_heigths[distidx], draw_heigths[prev_distidx], intensity);
-// 			draw_span(p_span->n, draw_heigths1[prev_distidx], draw_heigths1[distidx], intensity);
-// 		}
-// 		
-// 		p_span->prev_distidx = distidx;
-// 	}
-// }		
-
-#define ASM_LOAD_PSPAN_BYTE(reg, offset) asm(\
-"	ld "#reg",(ix+"#offset")\n");
-
-#define ASM_LOAD_PSPAN_WORD(reg_hi, reg_lo, offset) asm(\
-"	ld "#reg_lo",(ix+"#offset")\n\
-	ld "#reg_hi",(ix+"#offset"+1)\n");
-
-#define ASM_STORE_PSPAN_WORD(reg_hi, reg_lo, offset) asm(\
-"	ld (ix+"#offset"),"#reg_lo"\n\
-	ld (ix+"#offset"+1),"#reg_hi"\n");
-
-#define ASM_PUSH_PSPAN_BYTE(offset) \
-	ASM_LOAD_PSPAN_BYTE(l, offset); \
-	asm(\
-"	push hl\n");
-
-#define ASM_LUT_LOAD_BYTE(reg, table, reg_offset) \
-	asm(\
-"	ld   hl,_"#table"\n\
-	add hl,"#reg_offset"\n\
-	ld "#reg",(hl)\n");
-
-#define ASM_PUSH_LUT_BYTE(table, reg_offset) \
-	ASM_LUT_LOAD_BYTE(l, table, reg_offset); \
-	asm(\
-"	push hl\n");
-
-#define ASM_PUSH_CONST_BYTE(data) asm(\
-"	ld l,"#data"\n\
-	push hl\n");
-
-#define ASM_CALL_DRAW_SPAN() asm(\
-"	call _draw_span\n\
-	ld   hl,8 ; pop 8 bytes of params\n\
-	add  hl,sp\n\
-	ld   sp,hl\n");
-
-#define OFFSET_N 1
-#define OFFSET_DISTIX 5
-#define OFFSET_PREV_DISTIX 3
-
-#define REG_DISTIDX de
-#define REG_PREV_DISTIDX bc
-
 void __FASTCALL__ span_update(struct maze_vspan *p_span)
 {
+	#define ASM_LOAD_PSPAN_BYTE(reg, offset) asm(\
+	"	ld "#reg",(ix+"#offset")\n");
+
+	#define ASM_LOAD_PSPAN_WORD(reg_hi, reg_lo, offset) asm(\
+	"	ld "#reg_lo",(ix+"#offset")\n\
+		ld "#reg_hi",(ix+"#offset"+1)\n");
+
+	#define ASM_STORE_PSPAN_WORD(reg_hi, reg_lo, offset) asm(\
+	"	ld (ix+"#offset"),"#reg_lo"\n\
+		ld (ix+"#offset"+1),"#reg_hi"\n");
+
+	#define ASM_PUSH_PSPAN_BYTE(offset) \
+		ASM_LOAD_PSPAN_BYTE(l, offset); \
+		asm(\
+	"	push hl\n");
+
+	#define ASM_LUT_LOAD_BYTE(reg, table, reg_offset) \
+		asm(\
+	"	ld   hl,_"#table"\n\
+		add hl,"#reg_offset"\n\
+		ld "#reg",(hl)\n");
+
+	#define ASM_PUSH_LUT_BYTE(table, reg_offset) \
+		ASM_LUT_LOAD_BYTE(l, table, reg_offset); \
+		asm(\
+	"	push hl\n");
+
+	#define ASM_PUSH_CONST_BYTE(data) asm(\
+	"	ld l,"#data"\n\
+		push hl\n");
+
+	#define ASM_CALL_DRAW_SPAN() asm(\
+	"	call _draw_span\n\
+		ld   hl,8 ; pop 8 bytes of params\n\
+		add  hl,sp\n\
+		ld   sp,hl\n");
+
+	#define OFFSET_N 1
+	#define OFFSET_DISTIX 5
+	#define OFFSET_PREV_DISTIX 3
+	#define REG_DISTIDX de
+	#define REG_PREV_DISTIDX bc
+
 #asm
 	push hl
 	pop  ix
@@ -869,10 +853,78 @@ _span_update_draw1:
 	// remember the changed distance
 	ASM_STORE_PSPAN_WORD(d, e, OFFSET_PREV_DISTIX);
 	ASM_CALL_DRAW_SPAN();
+	
+	#undef ASM_LOAD_PSPAN_BYTE
+	#undef ASM_LOAD_PSPAN_WORD
+	#undef ASM_STORE_PSPAN_WORD
+	#undef ASM_PUSH_PSPAN_BYTE
+	#undef ASM_LUT_LOAD_BYTE
+	#undef ASM_PUSH_LUT_BYTE
+	#undef ASM_PUSH_CONST_BYTE
+	#undef ASM_CALL_DRAW_SPAN
+	#undef OFFSET_N
+	#undef OFFSET_DISTIX
+	#undef OFFSET_PREV_DISTIX
+	#undef REG_DISTIDX
+	#undef REG_PREV_DISTIDX
 }
 
-
 #asm
+
+/* C version of span_update() */
+// void span_update_c(struct maze_vspan *p_span)
+// {
+// 	// Making these variables static improves speed and is warranted, because
+// 	// this function is on critical path and is non-recursive
+// 	static uchar intensity, height;
+// 	static uint distidx, prev_distidx;
+// 
+// 	distidx = p_span->distidx;
+// 	prev_distidx = p_span->prev_distidx;
+// #ifndef NDEBUG
+// 	if (distidx > N_PRECALC_DRAW_DIST)
+// 	{
+// 		printf("Distance out of range: distidx=%d\n", distidx);
+// 		distidx = N_PRECALC_DRAW_DIST;
+// 	}
+// #endif
+// 
+// 	// NOTE: relies that spans are vertically symetrical
+// 	if (distidx > prev_distidx)
+// 	{
+// 		// The span is now farther away
+// 		intensity = draw_intens[distidx];
+// 	  
+// 		// White (erase)
+// 		draw_span(p_span->n, draw_heigths[prev_distidx], draw_heigths[distidx], INTENSITY_WHITE);
+// 		draw_span(p_span->n, draw_heigths1[distidx], draw_heigths1[prev_distidx], INTENSITY_WHITE);
+// 		
+// 		if (intensity != draw_intens[prev_distidx])
+// 		{
+// 			draw_span(p_span->n, draw_heigths[distidx], draw_heigths1[distidx], intensity);
+// 		}
+// 		
+// 		p_span->prev_distidx = distidx;
+// 	}
+// 	else if (distidx < prev_distidx)
+// 	{
+// 		// The span is now closer
+// 		intensity = draw_intens[distidx];
+// 		
+// 		if (intensity != draw_intens[prev_distidx])
+// 		{
+// 			draw_span(p_span->n, draw_heigths[distidx], draw_heigths1[distidx], intensity);
+// 		}
+// 		else
+// 		{
+// 			// Extend existing span
+// 			draw_span(p_span->n, draw_heigths[distidx], draw_heigths[prev_distidx], intensity);
+// 			draw_span(p_span->n, draw_heigths1[prev_distidx], draw_heigths1[distidx], intensity);
+// 		}
+// 		
+// 		p_span->prev_distidx = distidx;
+// 	}
+// }		
 
 	XREF	_draw_heigths
 
