@@ -18,64 +18,64 @@
 #error N_PRECALC_FACTOR is expected to be 16 by code in this file. Check if modifications are needed
 #endif
 
-// No saturation check, no early exit check, expects the arg1 to be bottom 8 bits
-//    C_       arg1[7..0] (being shifted)
-//    B_:D_:E  arg2[23..0] (being shifted)
-//    A_:H_:L  product[23..0]
-#define F_MULT_ITERATION_P_16b(id) asm(\
-"	srl c\n\
-	jr nc,_f_multiply_next_bit"#id"\n\
-._f_multiply_bit_on"#id"\n\
-	add hl,de\n\
-	adc b\n\
-._f_multiply_next_bit"#id"\n\
-	sla e\n\
-	rl d\n\
-	rl b\n");
-
-// Saturation check, early exit check, expects the arg1 to be top 8 bits
-//    B_       arg1[15..8] (being shifted)
-//    C_:D_:E  arg2[23..0] (being shifted)
-//    A_:H_:L  product[31..8]
-#define F_MULT_ITERATION_P_8b(id) asm(\
-"	srl b\n\
-	jr c, _f_multiply_bit_on"#id"\n\
-	jp nz, _f_multiply_next_bit"#id"\n\
-    ; if Z and NC, then exit the loop\n\
-	jp  _f_multiply_exit_hl\n\
-._f_multiply_bit_on"#id"\n\
-	add hl,de\n\
-	adc c\n\
-    ; saturation, if top byte of the 32-bit product is not 0 or 255\n\
-	jp z,_f_multiply_not_satur"#id"\n\
-	cp 255\n\
-	jp nz,_f_multiply_satur_ah\n\
-._f_multiply_not_satur"#id"\n\
-._f_multiply_next_bit"#id"\n\
-	sla e\n\
-	rl d\n\
-	rl c\n");
-
-// No saturation check, early exit check, expects the arg1 to be only 8 bits
-//    C_       arg1[7..0] (being shifted)
-//    B_:D_:E  arg2[23..0] (being shifted)
-//    A_:H_:L  product[23..0]
-#define F_MULT_ITERATION_P_8b_only(id) asm(\
-"	srl c\n\
-	jr c, _f_multiply_bit_on"#id"\n\
-	jp nz, _f_multiply_next_bit"#id"\n\
-	; if Z and NC, then exit the loop\n\
-	jp _f_multiply_exit_ah\n\
-._f_multiply_bit_on"#id"\n\
-	add hl,de\n\
-	adc b\n\
-._f_multiply_next_bit"#id"\n\
-	sla e\n\
-	rl d\n\
-	rl b\n");
-
 int __CALLEE__ f_multiply(int f_a, int f_b)
 {
+	// No saturation check, no early exit check, expects the arg1 to be bottom 8 bits
+	//    C_       arg1[7..0] (being shifted)
+	//    B_:D_:E  arg2[23..0] (being shifted)
+	//    A_:H_:L  product[23..0]
+	#define F_MULT_ITERATION_P_16b(id) asm(\
+	"	srl c\n\
+		jr nc,_f_multiply_next_bit"#id"\n\
+	._f_multiply_bit_on"#id"\n\
+		add hl,de\n\
+		adc b\n\
+	._f_multiply_next_bit"#id"\n\
+		sla e\n\
+		rl d\n\
+		rl b\n");
+
+	// Saturation check, early exit check, expects the arg1 to be top 8 bits
+	//    B_       arg1[15..8] (being shifted)
+	//    C_:D_:E  arg2[23..0] (being shifted)
+	//    A_:H_:L  product[31..8]
+	#define F_MULT_ITERATION_P_8b(id) asm(\
+	"	srl b\n\
+		jr c, _f_multiply_bit_on"#id"\n\
+		jp nz, _f_multiply_next_bit"#id"\n\
+		; if Z and NC, then exit the loop\n\
+		jp  _f_multiply_exit_hl\n\
+	._f_multiply_bit_on"#id"\n\
+		add hl,de\n\
+		adc c\n\
+		; saturation, if top byte of the 32-bit product is not 0 or 255\n\
+		jp z,_f_multiply_not_satur"#id"\n\
+		cp 255\n\
+		jp nz,_f_multiply_satur_ah\n\
+	._f_multiply_not_satur"#id"\n\
+	._f_multiply_next_bit"#id"\n\
+		sla e\n\
+		rl d\n\
+		rl c\n");
+
+	// No saturation check, early exit check, expects the arg1 to be only 8 bits
+	//    C_       arg1[7..0] (being shifted)
+	//    B_:D_:E  arg2[23..0] (being shifted)
+	//    A_:H_:L  product[23..0]
+	#define F_MULT_ITERATION_P_8b_only(id) asm(\
+	"	srl c\n\
+		jr c, _f_multiply_bit_on"#id"\n\
+		jp nz, _f_multiply_next_bit"#id"\n\
+		; if Z and NC, then exit the loop\n\
+		jp _f_multiply_exit_ah\n\
+	._f_multiply_bit_on"#id"\n\
+		add hl,de\n\
+		adc b\n\
+	._f_multiply_next_bit"#id"\n\
+		sla e\n\
+		rl d\n\
+		rl b\n");
+
 #asm
 ;
 ; Registers used:
@@ -243,6 +243,9 @@ _f_multiply_exit_ah:
    ret
 
 #endasm
+	#undef F_MULT_ITERATION_P_16b
+	#undef F_MULT_ITERATION_P_8b
+	#undef F_MULT_ITERATION_P_8b_only
 }
 
 /*
@@ -291,80 +294,78 @@ _f_dist_from_distidx:
 
 #ifdef UGLY_F_SQRT
 
-/*
- * Generates asm for one iteration of searching in table
- * 
- * Params
- *  offset - contains the offset of guess in the table (one bit must be set)
- *  offsetmsb - must be the high byte of offset
- *  offsetlsb - must be the low byte of offset
- * 
- * Registers
- *  HL    - pointer to current guess,
- *          if the value of param is higher or equal than a guess at (HL+offset),
- *          sets HL to HL+offset, otherwise leaves HL unchanged.
- *  DE:BC - parameter (value being searched for)
- */
-#define DISTIDX_ITERATION(offset) asm(\
-"	ld  a,d\n\
-	cp  (hl)\n\
-	jr  c,_f16_stb_lower"#offset"_0\n\
-	jr	nz,_f16_stb_higher"#offset"_0\n\
-	ld  a,e\n\
-	dec hl\n\
-	cp  (hl)\n\
-	jr  c,_f16_stb_lower"#offset"_1\n\
-	jr	nz,_f16_stb_higher"#offset"_1\n\
-	ld  a,b\n\
-	dec hl\n\
-	cp  (hl)\n\
-	jr  c,_f16_stb_lower"#offset"_2\n\
-	jr	nz,_f16_stb_higher"#offset"_2\n\
-	ld  a,c\n\
-	dec hl\n\
-	cp  (hl)\n\
-	jr  c,_f16_stb_lower"#offset"_3\n\
-_f16_stb_higher"#offset"_3:\n\
-	inc hl\n\
-_f16_stb_higher"#offset"_2:\n\
-	inc hl\n\
-_f16_stb_higher"#offset"_1:\n\
-	inc hl\n\
-_f16_stb_higher"#offset"_0:\n\
-	jp _f16_stb_next"#offset"\n\
-_f16_stb_lower"#offset"_3:\n\
-	inc hl\n\
-_f16_stb_lower"#offset"_2:\n\
-	inc hl\n\
-_f16_stb_lower"#offset"_1:\n\
-	inc hl\n\
-_f16_stb_lower"#offset"_0:\n\
-")
-
-// Different cases for offset bit in LS byte or MS byte
-// First try to add the offset, and if guess is larger, undo it
-// (this can be speeded up a bit by aligning _f16_sqrs on 2k 
-// and using set/res instructions, but complicates things)
-
-#define DISTIDX_ITERATION_MSB(offset, bit) asm(\
-"	set "#bit",h\n"); \
-	DISTIDX_ITERATION(offset);\
-asm(\
-"	res "#bit",h\n\
-_f16_stb_next"#offset":\n\
-")
-
-#define DISTIDX_ITERATION_LSB(offset, bit) asm(\
-"	set "#bit",l\n"); \
-	DISTIDX_ITERATION(offset); \
-asm(\
-"	res "#bit",l\n\
-_f16_stb_next"#offset":\n\
-")
-
-
 uint __FASTCALL__ distidx_sqrt(unsigned long f16_l)
 {
+	/*
+	 * Generates asm for one iteration of searching in table
+	 * 
+	 * Params
+	 *  offset - contains the offset of guess in the table (one bit must be set)
+	 *  offsetmsb - must be the high byte of offset
+	 *  offsetlsb - must be the low byte of offset
+	 * 
+	 * Registers
+	 *  HL    - pointer to current guess,
+	 *          if the value of param is higher or equal than a guess at (HL+offset),
+	 *          sets HL to HL+offset, otherwise leaves HL unchanged.
+	 *  DE:BC - parameter (value being searched for)
+	 */
+	#define DISTIDX_ITERATION(offset) asm(\
+	"	ld  a,d\n\
+		cp  (hl)\n\
+		jr  c,_f16_stb_lower"#offset"_0\n\
+		jr	nz,_f16_stb_higher"#offset"_0\n\
+		ld  a,e\n\
+		dec hl\n\
+		cp  (hl)\n\
+		jr  c,_f16_stb_lower"#offset"_1\n\
+		jr	nz,_f16_stb_higher"#offset"_1\n\
+		ld  a,b\n\
+		dec hl\n\
+		cp  (hl)\n\
+		jr  c,_f16_stb_lower"#offset"_2\n\
+		jr	nz,_f16_stb_higher"#offset"_2\n\
+		ld  a,c\n\
+		dec hl\n\
+		cp  (hl)\n\
+		jr  c,_f16_stb_lower"#offset"_3\n\
+	_f16_stb_higher"#offset"_3:\n\
+		inc hl\n\
+	_f16_stb_higher"#offset"_2:\n\
+		inc hl\n\
+	_f16_stb_higher"#offset"_1:\n\
+		inc hl\n\
+	_f16_stb_higher"#offset"_0:\n\
+		jp _f16_stb_next"#offset"\n\
+	_f16_stb_lower"#offset"_3:\n\
+		inc hl\n\
+	_f16_stb_lower"#offset"_2:\n\
+		inc hl\n\
+	_f16_stb_lower"#offset"_1:\n\
+		inc hl\n\
+	_f16_stb_lower"#offset"_0:\n\
+	")
+
+	// Different cases for offset bit in LS byte or MS byte
+	// First try to add the offset, and if guess is larger, undo it
+	// (this can be speeded up a bit by aligning _f16_sqrs on 2k 
+	// and using set/res instructions, but complicates things)
+
+	#define DISTIDX_ITERATION_MSB(offset, bit) asm(\
+	"	set "#bit",h\n"); \
+		DISTIDX_ITERATION(offset);\
+	asm(\
+	"	res "#bit",h\n\
+	_f16_stb_next"#offset":\n\
+	")
+
+	#define DISTIDX_ITERATION_LSB(offset, bit) asm(\
+	"	set "#bit",l\n"); \
+		DISTIDX_ITERATION(offset); \
+	asm(\
+	"	res "#bit",l\n\
+	_f16_stb_next"#offset":\n\
+	")
 #asm
 ;_distidx_sqrt:
 
@@ -405,6 +406,9 @@ _f16_end:
 	rr  l
 	
 #endasm
+	#undef DISTIDX_ITERATION
+	#undef DISTIDX_ITERATION_MSB
+	#undef DISTIDX_ITERATION_LSB
 }
 
 void ugly_f_sqrt_init()
@@ -415,93 +419,91 @@ void ugly_f_sqrt_init()
 
 #else // UGLY_F_SQRT
 
-/*
- * Generates asm for one iteration of searching in table
- * 
- * Params
- *  offset - contains the offset of guess in the table (one bit must be set)
- *  offsetmsb - must be the high byte of offset
- *  offsetlsb - must be the low byte of offset
- * 
- * Registers
- *  HL    - pointer to current guess,
- *          if the value of param is higher or equal than a guess at (HL+offset),
- *          sets HL to HL+offset, otherwise leaves HL unchanged.
- *  DE:BC - parameter (value being searched for)
- */
-#define DISTIDX_ITERATION(offset) asm(\
-"	ld  a,d\n\
-	cp  (hl)\n\
-	jr  c,_f16_stb_lower"#offset"_0\n\
-	jr	nz,_f16_stb_higher"#offset"_0\n\
-	ld  a,e\n\
-	dec hl\n\
-	cp  (hl)\n\
-	jr  c,_f16_stb_lower"#offset"_1\n\
-	jr	nz,_f16_stb_higher"#offset"_1\n\
-	ld  a,b\n\
-	dec hl\n\
-	cp  (hl)\n\
-	jr  c,_f16_stb_lower"#offset"_2\n\
-	jr	nz,_f16_stb_higher"#offset"_2\n\
-	ld  a,c\n\
-	dec hl\n\
-	cp  (hl)\n\
-	jr  c,_f16_stb_lower"#offset"_3\n\
-_f16_stb_higher"#offset"_3:\n\
-	inc hl\n\
-_f16_stb_higher"#offset"_2:\n\
-	inc hl\n\
-_f16_stb_higher"#offset"_1:\n\
-	inc hl\n\
-_f16_stb_higher"#offset"_0:\n\
-	jp _f16_stb_next"#offset"\n\
-_f16_stb_lower"#offset"_3:\n\
-	inc hl\n\
-_f16_stb_lower"#offset"_2:\n\
-	inc hl\n\
-_f16_stb_lower"#offset"_1:\n\
-	inc hl\n\
-_f16_stb_lower"#offset"_0:\n\
-")
-
-// Different cases for offset bit in LS byte or MS byte
-// First try to add the offset, and if guess is larger, undo it
-// (this can be speeded up a bit by aligning _f16_sqrs on 2k 
-// and using set/res instructions, but complicates things)
-
-#define DISTIDX_ITERATION_MSB(offset, offsetmsb) asm(\
-"	ld  a,"#offsetmsb"\n\
-	add h\n\
-	ld  h,a\n"); \
-	DISTIDX_ITERATION(offset);\
-asm(\
-"	ld  a,h\n\
-	sub "#offsetmsb"\n\
-	ld  h,a\n\
-_f16_stb_next"#offset":\n\
-")
-
-#define DISTIDX_ITERATION_LSB(offset, offsetlsb) asm(\
-"	ld  a,"#offsetlsb"\n\
-	add l\n\
-	ld  l,a\n\
-	jp nc,_f16_stb_1_"#offset"\n\
-	inc h\n\
-_f16_stb_1_"#offset":\n"); \
-	DISTIDX_ITERATION(offset); \
-asm(\
-"	ld  a,l\n\
-	sub "#offsetlsb"\n\
-	ld  l,a\n\
-	jp nc,_f16_stb_next"#offset"\n\
-	dec h\n\
-_f16_stb_next"#offset":\n\
-")
-
-
 uint __FASTCALL__ distidx_sqrt(unsigned long f16_l)
 {
+	/*
+	 * Generates asm for one iteration of searching in table
+	 * 
+	 * Params
+	 *  offset - contains the offset of guess in the table (one bit must be set)
+	 *  offsetmsb - must be the high byte of offset
+	 *  offsetlsb - must be the low byte of offset
+	 * 
+	 * Registers
+	 *  HL    - pointer to current guess,
+	 *          if the value of param is higher or equal than a guess at (HL+offset),
+	 *          sets HL to HL+offset, otherwise leaves HL unchanged.
+	 *  DE:BC - parameter (value being searched for)
+	 */
+	#define DISTIDX_ITERATION(offset) asm(\
+	"	ld  a,d\n\
+		cp  (hl)\n\
+		jr  c,_f16_stb_lower"#offset"_0\n\
+		jr	nz,_f16_stb_higher"#offset"_0\n\
+		ld  a,e\n\
+		dec hl\n\
+		cp  (hl)\n\
+		jr  c,_f16_stb_lower"#offset"_1\n\
+		jr	nz,_f16_stb_higher"#offset"_1\n\
+		ld  a,b\n\
+		dec hl\n\
+		cp  (hl)\n\
+		jr  c,_f16_stb_lower"#offset"_2\n\
+		jr	nz,_f16_stb_higher"#offset"_2\n\
+		ld  a,c\n\
+		dec hl\n\
+		cp  (hl)\n\
+		jr  c,_f16_stb_lower"#offset"_3\n\
+	_f16_stb_higher"#offset"_3:\n\
+		inc hl\n\
+	_f16_stb_higher"#offset"_2:\n\
+		inc hl\n\
+	_f16_stb_higher"#offset"_1:\n\
+		inc hl\n\
+	_f16_stb_higher"#offset"_0:\n\
+		jp _f16_stb_next"#offset"\n\
+	_f16_stb_lower"#offset"_3:\n\
+		inc hl\n\
+	_f16_stb_lower"#offset"_2:\n\
+		inc hl\n\
+	_f16_stb_lower"#offset"_1:\n\
+		inc hl\n\
+	_f16_stb_lower"#offset"_0:\n\
+	")
+
+	// Different cases for offset bit in LS byte or MS byte
+	// First try to add the offset, and if guess is larger, undo it
+	// (this can be speeded up a bit by aligning _f16_sqrs on 2k 
+	// and using set/res instructions, but complicates things)
+
+	#define DISTIDX_ITERATION_MSB(offset, offsetmsb) asm(\
+	"	ld  a,"#offsetmsb"\n\
+		add h\n\
+		ld  h,a\n"); \
+		DISTIDX_ITERATION(offset);\
+	asm(\
+	"	ld  a,h\n\
+		sub "#offsetmsb"\n\
+		ld  h,a\n\
+	_f16_stb_next"#offset":\n\
+	")
+
+	#define DISTIDX_ITERATION_LSB(offset, offsetlsb) asm(\
+	"	ld  a,"#offsetlsb"\n\
+		add l\n\
+		ld  l,a\n\
+		jp nc,_f16_stb_1_"#offset"\n\
+		inc h\n\
+	_f16_stb_1_"#offset":\n"); \
+		DISTIDX_ITERATION(offset); \
+	asm(\
+	"	ld  a,l\n\
+		sub "#offsetlsb"\n\
+		ld  l,a\n\
+		jp nc,_f16_stb_next"#offset"\n\
+		dec h\n\
+	_f16_stb_next"#offset":\n\
+	")
 #asm
 ;_distidx_sqrt:
 
@@ -542,6 +544,9 @@ _f16_end:
 	rr  l
 	
 #endasm
+	#define DISTIDX_ITERATION
+	#define DISTIDX_ITERATION_MSB
+	#define DISTIDX_ITERATION_LSB
 }
 
 #endif // UGLY_F_SQRT
