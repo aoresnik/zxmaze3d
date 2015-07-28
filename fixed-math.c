@@ -544,9 +544,9 @@ _f16_end:
 	rr  l
 	
 #endasm
-	#define DISTIDX_ITERATION
-	#define DISTIDX_ITERATION_MSB
-	#define DISTIDX_ITERATION_LSB
+	#undef DISTIDX_ITERATION
+	#undef DISTIDX_ITERATION_MSB
+	#undef DISTIDX_ITERATION_LSB
 }
 
 #endif // UGLY_F_SQRT
