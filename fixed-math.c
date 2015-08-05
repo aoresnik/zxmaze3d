@@ -4,12 +4,13 @@
 
 #define _FIXED_MATH_C_INCLUDED
 
+#include "common.h"
 #include "fixed-math.h"
 #include "tables.h"
 
 // If enabled, a faster f_sqr variant is used, but it occupies a 
 // fixed range of addresses 60k-62k
-//#define UGLY_F_SQRT
+#define UGLY_F_SQRT
 
 #if N_PRECALC_DRAW_DIST!=512
 #error N_PRECALC_DRAW_DIST is expected to be 512 by code in this file. Check if modifications are needed
@@ -374,7 +375,7 @@ uint __FASTCALL__ distidx_sqrt(unsigned long f16_l)
 	ld b,h
 	ld c,l
 	
-	ld	hl, 0xF000+3   ; pointer to current point
+	ld	hl, ADDR_ALIGNED_FSQRT_LUT + 3   ; pointer to current point
 	
 _f_sqrt_loop1:
 
@@ -395,7 +396,7 @@ _f_sqrt_loop1:
 _f16_end:
 	
     ; byte offset from pointer
-	ld bc,0xF000+3
+	ld bc, ADDR_ALIGNED_FSQRT_LUT + 3
 	and a
 	sbc hl,bc
 	
@@ -413,7 +414,7 @@ _f16_end:
 
 void ugly_f_sqrt_init()
 {
-	memcpy(0xF000, f16_sqrs, N_PRECALC_DRAW_DIST * sizeof(long));
+	memcpy(ADDR_ALIGNED_FSQRT_LUT, f16_sqrs, N_PRECALC_DRAW_DIST * sizeof(long));
 }
 
 

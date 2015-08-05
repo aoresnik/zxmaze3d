@@ -6,6 +6,7 @@
 
 #include "common.h"
 #include "timing.h"
+#include "irq.h"
 
 #define _CMD_C_INCLUDED
 #include "cmd.h"
@@ -205,33 +206,8 @@ M_END_ISR
 
 void cmd_init(uchar *a_keys_map, uchar *a_toggle_keys_map)
 {
-	int l0, l1, l2, l3, l4;
-	
 	p_keys_map = a_keys_map;
 	p_toggle_keys_map = a_toggle_keys_map;
 
-	// See: http://www.z88dk.org/wiki/doku.php?id=library:interrupts
-	// Addresses from 0xFDFD to 0xFF01 (260 bytes) are unusable for other purposes
-    #asm
-    di
-    #endasm
-    im2_Init(0xfe00);
-	// In IM2, the byte read from bus might be different from 0xFF
-	// (http://scratchpad.wikia.com/wiki/Interrupts)
-    memset(0xfe00, 0xfd, 257);       // initialize 257-byte im2 vector table with all 0xFD bytes
-    bpoke(0xfdfd, 195);              // POKE jump instruction at address 0xFDFD (interrupt service routine entry)
-    wpoke(0xfdfe, (unsigned int) (cmd_isr));          // POKE isr address following the jump instruction
-    #asm
-    ei
-    #endasm
-	
- 	debug_printf("Installed keyboard ISR\n");
-	
-	l0 = loops_until_interrupt();
-	l1 = loops_until_interrupt();
-	l2 = loops_until_interrupt();
-	l3 = loops_until_interrupt();
-	l4 = loops_until_interrupt();
-	
- 	debug_printf("Loops per interrupt: now %d, %d, %d, %d, %d, ...; orig %d\n", l0, l1, l2, l3, l4, t_loops);
+    irq_set_isr(cmd_isr);
 }

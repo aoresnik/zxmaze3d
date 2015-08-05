@@ -4,7 +4,7 @@
 
 all: zxmaze3d.tap test-span.tap test-fixed-math.tap
 
-zxmaze3d.tap : zxmaze3d.c draw-utils.o map.o state.o render-eng1.o tables.o timing.o span.o fixed-math.o cmd.o
+zxmaze3d.tap : zxmaze3d.c draw-utils.o map.o state.o render-eng1.o tables.o timing.o span.o fixed-math.o cmd.o irq.o
 
 test-span.tap : test-span.c timing.o tables.o span.o
 
