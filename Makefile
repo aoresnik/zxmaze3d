@@ -1,6 +1,6 @@
 
 # NDEBUG Disables some consistency checks and debug prints on start
-#ZCC_FLAGS = -DNDEBUG
+ZCC_FLAGS = -DNDEBUG
 
 all: zxmaze3d.tap test-span.tap test-fixed-math.tap
 
