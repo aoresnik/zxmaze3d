@@ -41,105 +41,6 @@ uchar ht_bits[] = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-#ifdef USE_PG_SPAN_DRAW
-void init_precomp_draw();
-#endif
-
-void span_init()
-{
-#ifdef USE_PG_SPAN_DRAW
-	init_precomp_draw();
-#endif
-}
-
-
-/*
- * cx is in character coordinatest
- * y is in pixel coordinates
- */
-// uchar *screen_byte_for(uchar cx, uchar y)
-// {
-	// uchar mask;
-	// return zx_pxy2saddr(0, y, &mask) + cx;
-// }
-
-uchar __CALLEE__ *screen_byte_for(uchar cx, uchar y);
-
-#asm
-._screen_byte_for
-	; http://flockofspectrums.wordpress.com/2010/10/02/zx-spectrum-screen-memory/
-	;
-	; [0 | 1 | 0|y7 y6|y2 y1 y0][y5 y4 y3|x4 x3 x2 x1 x0]
-	
-	pop hl
-	pop bc  ; y
-	pop de  ; cx
-	
-	push hl ; return address
-		
-	ld	h,2
-	
-	ld  a,c ; y
-	sla a	
-	rl  h	; y7
-	sla a   
-	rl  h	; y6
-	sla h
-	sla h
-	sla h
-	
-	and $E0 ; y5..y3
-	or e    ; x4..x0
-	ld l,a
-	
-	ld  a,c  ; y
-	and $07  ; y2..y0
-	or  h
-	ld  h,a
-	
-	ret
-#endasm
-
-/*
- * Paints the 8-pixels wide vertical span in column cx (0..32), with Bayer halftone pattern 
- * of intensity (but could in principle draw any other 8x8 pattern), from line y0 (0..191) 
- * to line y1 (0..191); y1 > y0.
- * 
- * Fills the specified span with halftone 4x4 pattern of intensity
- * (supported levels are from INTENSITY_BLACK to INTENSITY_WHITE).
- *
- * Used for small spans, where y0 and y1 are within te same 8x8 cell.
- *
- * FIXME: is it really needed? Remove
- */
-uchar *draw_block_small(uchar *p_scr, uchar *p_pat, uchar y1, uchar y0);
-
-#asm
-
-_draw_block_small:
-	ld	ix,0
-	add	ix,sp
-	
-	ld	e,(ix+8)    ; p_scr
-	ld	d,(ix+9)    ; 
-	ld	l,(ix+6)    ; p_pat
-	ld	h,(ix+7)    ; 
-	ld  b,0
-	ld  c,(ix+2)
-	add hl,bc
-	ld	a,(ix+4)    ; y1
-	sub (ix+2)
-	ld  b,a			; dy
-	
-_draw_block_small_l1:
-	ld a,(hl)
-	ld (de),a
-	inc hl
-	inc d
-	djnz _draw_block_small_l1
-
-	ret
-#endasm
 
 #if defined(USE_PG_SPAN_DRAW)
 
@@ -231,7 +132,7 @@ void init_precomp_draw()
  * Fills the specified span with halftone 4x4 pattern of intensity
  * (supported levels are from INTENSITY_BLACK to INTENSITY_WHITE).
  *
- * Uses the precompiled unrolled loops to draw (from ht_4x4_asm_routines.h).
+ * Uses the precompiled unrolled loops to draw.
  */
 void draw_span(uchar cx, uchar y0, uchar y1, uchar intensity);
 
@@ -846,8 +747,6 @@ _span_update_draw1:
 	#undef REG_PREV_DISTIDX
 }
 
-#asm
-
 /* C version of span_update() */
 // void span_update_c(struct maze_vspan *p_span)
 // {
@@ -903,7 +802,16 @@ _span_update_draw1:
 // 	}
 // }		
 
+
+void span_init()
+{
+#ifdef USE_PG_SPAN_DRAW
+	init_precomp_draw();
+#endif
+}
+
+#asm
+
 	XREF	_draw_heigths
 
-	
 #endasm
