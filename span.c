@@ -8,11 +8,15 @@
 
 #define _SPAN_C_INCLUDED
 
+#include "common.h"
 #include "span.h"
 #include "tables.h"
 
 // Use pregenerated span draw routines (a bit faster, but uses 5k of RAM)
 //#define USE_PG_SPAN_DRAW
+
+// Use run-time compiled span draw routines (a bit faster, but uses 5k of RAM)
+#define USE_PG_SPAN_DRAW2
 
 #ifdef USE_PG_SPAN_DRAW
 #include "ht_4x4_asm_routines.h"
@@ -44,8 +48,15 @@ uchar ht_bits[] = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
+#ifdef USE_PG_SPAN_DRAW2
+void init_precomp_draw();
+#endif
+
 void span_init()
 {
+#ifdef USE_PG_SPAN_DRAW2
+	init_precomp_draw();
+#endif
 }
 
 
@@ -137,7 +148,7 @@ _draw_block_small_l1:
 	ret
 #endasm
 
-#ifdef USE_PG_SPAN_DRAW
+#if defined(USE_PG_SPAN_DRAW)
 
 void __CALLEE__ call_precompiled_span(int offset, int hl);
 
@@ -386,45 +397,269 @@ _draw_block_pgl00__small1:
 	ret
 #endasm
 
-#if 0
-void draw_precompiled_span_test_patterns()
+#elif defined(USE_PG_SPAN_DRAW2)
+
+void * entry_pts[193];
+
+#define PRECOMP_BUF_SIZE 544
+
+uchar precomp_buffer[PRECOMP_BUF_SIZE];
+
+int precomp_pos;
+
+void precomp_emit(uchar b)
 {
-	int i;
-	uchar j;
-	uchar x0, x1, x2;
-	uchar y0, y1;
-	int center;
-    long duration;
-	struct t_span *p_span, *p_span_end;
-	int bytes;
-	int kbps;
-	
-	bytes = 1;
-	
-	timing_start();
-	
-	for (i = 0; i < 24; i++)
+	if (precomp_pos <= PRECOMP_BUF_SIZE)
 	{
-		y1 = 24-i;
-		draw_span_pregenerated(i, 0, y1 * 8, i % 16);
+		precomp_buffer[precomp_pos] = b;
+		precomp_pos++;
 	}
-
-/*	
-	for (i = 0; i <= 8; i++)
+	else
 	{
-		y1 = 16-i;
-		// ni vec tocno
-		call_precompiled_span(span_func_tbl[8 * (y1 - 1) + ((y1 - 1) % 8)], 16384 + 10 + i);
+		puts("Precomp buffer overflow");
+		exit(127);
 	}
-*/
-	duration = timing_elapsed();
-	kbps = bytes / duration;
-	
-	printf("Drawn precompiled span test patterns - %d bytes in %ld ms, %d kB/s\n", bytes, duration, kbps);
 }
-#endif // #if 0
 
-#else // USE_PG_SPAN_DRAW
+void init_precomp_draw()
+{
+	int line;
+	
+	precomp_pos = 0;
+	
+	for (line = 0; line < 192; line++)
+	{
+		entry_pts[line] = &precomp_buffer[precomp_pos];
+		
+		// Write a 8-pixel slice of the span
+		switch (line % 4)
+		{
+			case 0:
+				precomp_emit(0x71); //       LD   (HL),C 
+				break;
+			case 1:
+				precomp_emit(0x73); //       LD   (HL),E 
+				break;
+			case 2:
+				precomp_emit(0x72); //       LD   (HL),D 
+				break;
+			case 3:
+				precomp_emit(0x70); //       LD   (HL),B 
+		}
+		
+		// Move HL to new line
+
+		if (((line + 1) % 64) == 0)
+		{
+			precomp_emit(0x3E); //       LD   A,20H  
+			precomp_emit(0x20); //
+			precomp_emit(0x85); //       ADD  L      
+			precomp_emit(0x6F); //       LD   L,A    
+			precomp_emit(0x24); //       INC  H      
+		}
+		else if (((line + 1) % 8) == 0)
+		{
+			precomp_emit(0x3E); //       LD   A,20H  
+			precomp_emit(0x20); //
+			precomp_emit(0x85); //       ADD  L      
+			precomp_emit(0x6F); //       LD   L,A    
+			precomp_emit(0x3E); //       LD   A,F9H  
+			precomp_emit(0xF9); //
+			precomp_emit(0x84); //       ADD  H      
+			precomp_emit(0x67); //       LD   H,A    
+		}
+		else 
+		{
+			precomp_emit(0x24); //       INC  H      
+		}
+	}
+	
+	entry_pts[192] = &precomp_buffer[precomp_pos];
+	precomp_emit(0xC9); //       RET
+	
+	debug_printf("Generated precompiled span draw code, %d bytes\n", precomp_pos);
+}
+
+/*
+ * Paints the 8-pixels wide vertical span in column cx (0..32), with Bayer halftone pattern 
+ * of intensity (but could in principle draw any other 8x8 pattern), from line y0 (0..191) 
+ * to line y1 (0..191); y1 > y0.
+ * 
+ * Fills the specified span with halftone 4x4 pattern of intensity
+ * (supported levels are from INTENSITY_BLACK to INTENSITY_WHITE).
+ *
+ * Uses the precompiled unrolled loops to draw (from ht_4x4_asm_routines.h).
+ */
+void draw_span(uchar cx, uchar y0, uchar y1, uchar intensity);
+
+#asm
+_draw_blocks:
+	ld	ix,0
+	add	ix,sp
+	
+	ld	e,(ix+8)    ; p_scr
+	ld	d,(ix+9)    ; 
+	
+	ld	l,(ix+2)    ; p_pat
+	ld	h,(ix+3)    ; 
+	push hl
+
+	ld  a,(ix+6) ; y0
+	jr _draw_blocks_pg__
+
+_draw_span:
+	ld	ix,0
+	add	ix,sp
+	
+; TODO: for draw_blocks
+_draw_blocks_pg__:
+	ld  a,(ix+6) ; y0
+	and 0xF8
+	ld  l,a
+	
+	ld  c,(ix+4)  ; y1
+	
+	ld  a,c
+	and 0xF8
+	cp  l
+	jp  z,_draw_span_pg_case_small
+	
+	ld  b,0
+    ld  hl, _entry_pts
+	add hl,bc
+	add hl,bc
+	ld  e,(hl)
+	inc hl
+	ld  d,(hl)
+	ld  a,(de)
+	ld  c,a
+	push bc         ; save the previous content of the stop marker
+	ld  a,0xC9      
+	ld  (de),a      ; write RET
+	push de         ; save the address of the stop marker
+	
+	ld hl,_draw_blocks_pg_ret
+	push hl         ; return address from the draw code
+	
+	ld  c,(ix+6)  ; y0
+	ld  b,0
+    ld  hl, _entry_pts
+	add hl,bc
+	add hl,bc
+	ld  e,(hl)
+	inc hl
+	ld  d,(hl)
+	push de         ; entry point of the draw code, for line y0 
+	
+	ld	d,2
+	
+	ld  a,(ix+6) ; y0
+	ld  b,a ; y0 kept in b as long as possible
+	sla a	
+	rl  d	; y7
+	sla a   
+	rl  d	; y6
+	sla d
+	sla d
+	sla d
+	
+	and $E0 ; y5..y3
+	or (ix+8)    ; x4..x0
+	ld e,a
+	
+	ld  a,b  ; y0
+	and $07  ; y2..y0
+	or  d
+	ld  d,a
+	
+	push de         ; screen addres for byte at (cx, y0)
+	
+	ld  h,0
+	ld	l,(ix+2)    ; intensity
+	add hl,hl
+	add hl,hl
+	add hl,hl
+	ld bc,_ht_bits
+	add hl,bc
+
+	; HL now contains the pointer to pattern
+
+	ld c,(hl)       ; load pattern into cedb
+	inc hl
+	ld e,(hl)
+	inc hl
+	ld d,(hl)
+	inc hl
+	ld b,(hl)
+
+	pop hl			; screen
+
+	ret  ; call the draw routine, address is on stack
+_draw_blocks_pg_ret:
+    pop  hl         ; the address of the end marker
+	pop  bc         ; C has the previous value of the end marker
+	ld (hl),c       ; restore the previous value of the end marker
+
+	ret
+	
+._draw_span_pg_case_small
+	ld	d,2
+	
+	ld  b,(ix+6) ; y0 kept in b, c or a as long as possible
+	ld  a,b
+	sla a	
+	rl  d	; y7
+	sla a   
+	rl  d	; y6
+	sla d
+	sla d
+	sla d
+	
+	and $E0 ; y5..y3
+	or (ix+8)    ; x4..x0
+	ld e,a
+	
+	ld  a,b  ; y0
+	and $07  ; y2..y0
+	or  d
+	ld  d,a
+	; DE now contains the addres for byte at (cx, y0)
+	
+	ld  a,b   ; y0
+	
+	ld  h,0
+	ld	l,(ix+2)    ; intensity
+	add hl,hl
+	add hl,hl
+	add hl,hl
+	ld bc,_ht_bits
+	add hl,bc
+	; HL now contains the pointer to pattern
+	
+	; increase hl for yskip bytes
+	; y0 in a
+	ld  b,a    ; y0
+	and 7
+	ld	c,a         ; yskip = y0 & 7
+	ld  a,b    ; y0
+	ld	b,0
+	add hl,bc       ; advance pointer to pattern
+
+	neg
+	add a,(ix+4)    ; y1
+	ret z
+	ld  b,a         ; lines to draw
+_draw_block_l00__small1:	
+	ld a,(hl)
+	ld (de),a
+	inc hl
+   	inc d
+	djnz _draw_block_l00__small1
+	ret
+	
+#endasm
+
+#else 
 
 /*
  * Paints the 8-pixels wide vertical span in column cx (0..32), with Bayer halftone pattern 
@@ -691,7 +926,6 @@ _draw_block_l00__small1:
 
 	XDEF	_draw_blocks
 
-	
 #endasm
 
 /*
