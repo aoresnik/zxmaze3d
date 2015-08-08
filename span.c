@@ -12,15 +12,8 @@
 #include "span.h"
 #include "tables.h"
 
-// Use pregenerated span draw routines (a bit faster, but uses 5k of RAM)
+// Use run-time compiled span draw routines
 //#define USE_PG_SPAN_DRAW
-
-// Use run-time compiled span draw routines (a bit faster, but uses 5k of RAM)
-#define USE_PG_SPAN_DRAW2
-
-#ifdef USE_PG_SPAN_DRAW
-#include "ht_4x4_asm_routines.h"
-#endif
 
 
 /**
@@ -48,13 +41,13 @@ uchar ht_bits[] = {
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-#ifdef USE_PG_SPAN_DRAW2
+#ifdef USE_PG_SPAN_DRAW
 void init_precomp_draw();
 #endif
 
 void span_init()
 {
-#ifdef USE_PG_SPAN_DRAW2
+#ifdef USE_PG_SPAN_DRAW
 	init_precomp_draw();
 #endif
 }
@@ -150,255 +143,6 @@ _draw_block_small_l1:
 
 #if defined(USE_PG_SPAN_DRAW)
 
-void __CALLEE__ call_precompiled_span(int offset, int hl);
-
-#asm
-_call_precompiled_span:
-	pop bc
-	
-	pop	hl    ; hl
-	pop	de    ; offset
-	
-	push bc
-	
-	; call the routine
-	push de
-	
-	ld	bc,0xAA55
-	ld	de,0x55AA
-	
-	ret
-	
-	ret	
-#endasm	
-
-/*
- * Paints the 8-pixels wide vertical span in column cx (0..32), with Bayer halftone pattern 
- * of intensity (but could in principle draw any other 8x8 pattern), from line y0 (0..191) 
- * to line y1 (0..191); y1 > y0.
- * 
- * Fills the specified span with halftone 4x4 pattern of intensity
- * (supported levels are from INTENSITY_BLACK to INTENSITY_WHITE).
- *
- * Uses the precompiled unrolled loops to draw (from ht_4x4_asm_routines.h).
- */
-void draw_span(uchar cx, uchar y0, uchar y1, uchar intensity);
-
-#asm
-_draw_blocks:
-	ld	ix,0
-	add	ix,sp
-	
-	ld	e,(ix+8)    ; p_scr
-	ld	d,(ix+9)    ; 
-	
-	ld	l,(ix+2)    ; p_pat
-	ld	h,(ix+3)    ; 
-	push hl
-
-	ld  a,(ix+6) ; y0
-	jr _draw_blocks_pg__
-
-_draw_span:
-	ld	ix,0
-	add	ix,sp
-	
-	ld	d,2
-	
-	ld  a,(ix+6) ; y0
-	ld  b,a ; y0 kept in b as long as possible
-	sla a	
-	rl  d	; y7
-	sla a   
-	rl  d	; y6
-	sla d
-	sla d
-	sla d
-	
-	and $E0 ; y5..y3
-	or (ix+8)    ; x4..x0
-	ld e,a
-	
-	ld  a,b  ; y0
-	and $07  ; y2..y0
-	or  d
-	ld  d,a
-	; DE now contains the addres for byte at (cx, y0)
-	
-	ld  h,0
-	ld	l,(ix+2)    ; intensity
-	
-	ld  a,b   ; y0
-	
-	add hl,hl
-	add hl,hl
-	add hl,hl
-	ld bc,_ht_bits
-	add hl,bc
-
-	push hl			; keep p_pat on stack
-	
-	; HL now contains the pointer to pattern
-	
-_draw_blocks_pg__:
-	; increase hl for yskip bytes
-	; y0 already in a
-	ld  b,a
-	and 7
-	ld	c,a         ; yskip = y0 & 7
-	ld  a,b
-	ld	b,0
-	add hl,bc
-
-	and $F8
-	ld  b,a
-	ld  a,(ix+4)
-	sub b
-	
-	; if the drawing does not cross 8 boundary, use simpler routine
-	ld b,8
-	cp b
-	jp c,_draw_block_pgl00__small
-	
-	ld  b,a         ; ny
-	
-	
-	ld	a,c    		; yskip
-	and a
-	jr  z, _draw_blocks_pg__l0a   ; in case yskip=0, avoid drawing the beginning
-	
-	ld  a,8
-	sub c			; yskip
-	ld  b,a			; b = 8-yskip
-	
-_draw_block_pgl00:	
-	ld a,(hl)
-	ld (de),a
-	inc hl
-   	inc d
-	djnz _draw_block_pgl00
-
-	ld  a,(ix+6)
-	and $F8
-	ld  b,a
-	ld  a,(ix+4)
-	sub b
-	sub 8
-	ld  b,a         ; ny
-	
-	; de to beginning of line
-	ld a,d
-	sub 8
-	ld d,a
-	
-	; Advance de to a next character line
-	ld a,e
-	add a,32
-	ld e,a
-	jr nc,_draw_blocks_pg__l0a
-	
-	; In case of overflow, add to the number of lines
-	ld a,d
-	add a,8
-	ld d,a
-
-_draw_blocks_pg__l0a:	
-
-    ; the middle part: character aligned
-	; de must contain screen
-	; b is expected to contain ny-8 at this point
-	; except if 8-aligned, in this case it is ny (so it is no. of lines to draw)
-	ld a,b
-	and $F8         ; obtain no of blocks
-	jr z,_draw_blocks_pg__l2de  ; only do the looop in case of >0 blocks
-	
-;------------ draw b lines, leave HL pointing on the next line after end
-	sub 8
-	ld b,a
-
-	ld	a,(ix+4)    ; y1
-	srl a
-	srl a
-	srl a
-	; must be filled with cell up to a
-	and $07
-	
-	add b
-	ld l,a
-	ld h,0
-	; offset from idx
-	add hl,hl
-	ld bc,_span_func_tbl
-	add hl,bc
-	ld	c,(hl)
-	inc hl
-	ld  b,(hl)
-	
-	pop hl
-	push hl			; p_pat
-	exx
-	ld hl,_draw_blocks_pg__l323 ; return address
-	push hl
-	exx
-	push bc         ; pregenerated routine address
-	push de			; screen
-	ld c,(hl)       ; load pattern into cedb
-	inc hl
-	ld e,(hl)
-	inc hl
-	ld d,(hl)
-	inc hl
-	ld b,(hl)
-
-	pop hl			; screen
-
-	ret  ; call the draw routine, address is on stack
-_draw_blocks_pg__l323:
-	
-;--------------------------------------------------------------	
-	
-_draw_blocks_pg__l2:	
-	pop de	; p_pat
-
-	ld  a,(ix+4)
-	and a,$07
-	ret z			; return in case 0 more lines to draw
-	ld b,a
-
-_draw_blocks_pg__l4:	
-	ld a,(de)
-	ld (hl),a
-	inc de
-	inc h
-	djnz _draw_blocks_pg__l4
-
-	ret
-	
-_draw_blocks_pg__l2de:
-	; _draw_blocks_pg__l2 expects hl to point to screen, but at the point of call it is in de
-	ld h,d
-	ld l,e
-	jr _draw_blocks_pg__l2
-	
-_draw_block_pgl00__small:
-	; c: yskip
-	; a: ny
-	; lines to draw: ny - yskip
-	sub c
-	pop bc
-	ret z
-	ld  b,a         ; lines to draw
-_draw_block_pgl00__small1:	
-	ld a,(hl)
-	ld (de),a
-	inc hl
-   	inc d
-	djnz _draw_block_pgl00__small1
-	ret
-#endasm
-
-#elif defined(USE_PG_SPAN_DRAW2)
-
 void * entry_pts[193];
 
 #define PRECOMP_BUF_SIZE 544
@@ -416,7 +160,7 @@ void precomp_emit(uchar b)
 	}
 	else
 	{
-		puts("Precomp buffer overflow");
+		puts("Precomp buffer overflow. Increase the value of PRECOMP_BUF_SIZE and recompile");
 		exit(127);
 	}
 }
@@ -448,7 +192,6 @@ void init_precomp_draw()
 		}
 		
 		// Move HL to new line
-
 		if (((line + 1) % 64) == 0)
 		{
 			precomp_emit(0x3E); //       LD   A,20H  
