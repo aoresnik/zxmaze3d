@@ -176,11 +176,10 @@ _draw_blocks_pg__:
 	inc hl
 	ld  d,(hl)
 	ld  a,(de)
-	ld  c,a
-	push bc         ; save the previous content of the stop marker
+	ld  c,a		    ; save the previous content of the stop marker
 	ld  a,0xC9      
 	ld  (de),a      ; write RET
-	push de         ; save the address of the stop marker
+	exx             ; save the address of the stop marker and prev byte
 	
 	ld hl,_draw_blocks_pg_ret
 	push hl         ; return address from the draw code
@@ -194,29 +193,6 @@ _draw_blocks_pg__:
 	inc hl
 	ld  d,(hl)
 	push de         ; entry point of the draw code, for line y0 
-	
-	ld	d,2
-	
-	ld  a,(ix+6) ; y0
-	ld  b,a ; y0 kept in b as long as possible
-	sla a	
-	rl  d	; y7
-	sla a   
-	rl  d	; y6
-	sla d
-	sla d
-	sla d
-	
-	and $E0 ; y5..y3
-	or (ix+8)    ; x4..x0
-	ld e,a
-	
-	ld  a,b  ; y0
-	and $07  ; y2..y0
-	or  d
-	ld  d,a
-	
-	push de         ; screen addres for byte at (cx, y0)
 	
 	ld  h,0
 	ld	l,(ix+2)    ; intensity
@@ -236,13 +212,32 @@ _draw_blocks_pg__:
 	inc hl
 	ld b,(hl)
 
-	pop hl			; screen
+	; calculate the screen address
+	ld	h,2
+	
+	ld  a,(ix+6) ; y0
+	sla a	
+	rl  h	; y7
+	sla a   
+	rl  h	; y6
+	sla h
+	sla h
+	sla h
+	
+	and $E0 ; y5..y3
+	or (ix+8)    ; x4..x0
+	ld l,a
+	
+	ld  a,(ix+6) ; y0
+	and $07  ; y2..y0
+	or  h
+	ld  h,a
 
 	ret  ; call the draw routine, address is on stack
 _draw_blocks_pg_ret:
-    pop  hl         ; the address of the end marker
-	pop  bc         ; C has the previous value of the end marker
-	ld (hl),c       ; restore the previous value of the end marker
+    exx             ; 
+	ld a,c
+	ld (de),a       ; restore the previous value of the end marker
 
 	ret
 	
