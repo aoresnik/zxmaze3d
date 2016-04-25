@@ -16,7 +16,7 @@ NOTE: This program was developed for a computer from 1982, which was low end eve
 
 ## Usage
 
-You can try it [on-line](http://andrejo.github.io/zxmaze3d/) in the Javascript ZX Spectrum emulator.
+Try it [on-line](http://andrejo.github.io/zxmaze3d/) in the Javascript ZX Spectrum emulator.
 
 Or run the zxmaze3d.z80 binary (see [download page](http://andrejo.github.io/zxmaze3d/)) on your computer with a ZX Spectrum emulator (tested in FUSE and EMUZWin). Not yet tested on a  real ZX Spectrum machine at the time of this writing.   
    
