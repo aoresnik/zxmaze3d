@@ -1,7 +1,7 @@
 
 # ZXMAZE3D
 
-A simple 3D demo for ZX Spectrum 8-bit computer (48k model or better). 
+A simple 3D demo for ZX Spectrum 8-bit computer (48k model or better).
 
 Walls are rendered as halftone shaded solid color. No monsters yet. 
 Achieves frame rates around 10-20 FPS. The goal was as high frame rate as possible while producing something resembling a 3D environment (there are texture-mapped fully-blown 3D games for ZX Spectrum, but they are slow and tipically work only on 128k model).
@@ -16,7 +16,9 @@ NOTE: This program was developed for a computer from 1982, which was low end eve
 
 ## Usage
 
-Run the zxmaze3d.z80  binary (see [download page](http://andrejo.github.io/zxmaze3d/)) with a ZX Spectrum emulator (tested in FUSE and EMUZWin). Not yet tested on a  real ZX Spectrum machine at the time of this writing.   
+You can try it [on-line](http://andrejo.github.io/zxmaze3d/) in the Javascript ZX Spectrum emulator.
+
+Or run the zxmaze3d.z80 binary (see [download page](http://andrejo.github.io/zxmaze3d/)) on your computer with a ZX Spectrum emulator (tested in FUSE and EMUZWin). Not yet tested on a  real ZX Spectrum machine at the time of this writing.   
    
 Use standard WSAD keys to move around (no other interactions yet):
 * W - forwards
