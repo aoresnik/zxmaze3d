@@ -29,13 +29,17 @@ void irq_set_isr(void *isr)
     di
     #endasm
     im2_Init(ADDR_IRQ_VECTOR_TABLE);
+	
 	// In IM2, the byte read from bus might be different from 0xFF
 	// workaround: fill all the bytes in the IRQ vector table with the same value,
 	// so that any two consecutive bytes point to IRQ trampoline
 	// (http://scratchpad.wikia.com/wiki/Interrupts)
-    memset(ADDR_IRQ_VECTOR_TABLE, 0xfd, 257);       // initialize 257-byte im2 vector table with all 0xFD bytes
-    bpoke(ADDR_IRQ_TRAMPOLINE, 195);              // POKE jump instruction at address 0xFDFD (interrupt service routine entry)
-    wpoke(ADDR_IRQ_TRAMPOLINE+1, (unsigned int) (isr));          // POKE isr address following the jump instruction
+	
+	// initialize 257-byte im2 vector table with the address of trampoline
+    memset(ADDR_IRQ_VECTOR_TABLE, ADDR_IRQ_TRAMPOLINE_1B, 257);       
+	// POKE jump instruction and address to trampoline
+    bpoke(ADDR_IRQ_TRAMPOLINE, 195);              
+    wpoke(ADDR_IRQ_TRAMPOLINE+1, (unsigned int) (isr));   
     #asm
     ei
     #endasm
