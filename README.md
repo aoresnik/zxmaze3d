@@ -16,9 +16,9 @@ NOTE: This program was developed for a computer from 1982, which was low end eve
 
 ## Usage
 
-Try it [on-line](http://andrejo.github.io/zxmaze3d/) in the Javascript ZX Spectrum emulator.
+Try it [on-line](http://aoresnik.github.io/zxmaze3d/) in the Javascript ZX Spectrum emulator.
 
-Or run the zxmaze3d.z80 binary (see [download page](http://andrejo.github.io/zxmaze3d/)) on your computer with a ZX Spectrum emulator (tested in FUSE and EMUZWin). Not yet tested on a  real ZX Spectrum machine at the time of this writing.   
+Or run the zxmaze3d.z80 binary (see [download page](http://aoresnik.github.io/zxmaze3d/)) on your computer with a ZX Spectrum emulator (tested in FUSE and EMUZWin). Not yet tested on a  real ZX Spectrum machine at the time of this writing.   
    
 Use standard WSAD keys to move around (no other interactions yet):
 * W - forwards
@@ -35,4 +35,4 @@ Tested with z88dk v1.10.1 and GNU make (under Linux and under Cygwin).
    
 Make sure that z88dk executables are in the PATH and that the environment variables required by z88dk are set. Then run make to compile. 
 
-The resulting file to be run is zxmaze3d.tap (converted to more commonly supported .z80 format on [download page](http://andrejo.github.io/zxmaze3d/)).
+The resulting file to be run is zxmaze3d.tap (converted to more commonly supported .z80 format on [download page](http://aoresnik.github.io/zxmaze3d/)).
