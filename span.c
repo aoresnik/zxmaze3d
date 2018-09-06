@@ -13,7 +13,7 @@
 #include "tables.h"
 
 // Use run-time compiled span draw routines
-//#define USE_PG_SPAN_DRAW
+#define USE_PG_SPAN_DRAW
 
 
 /**
@@ -66,6 +66,12 @@ void precomp_emit(uchar b)
 	}
 }
 
+void precomp_set_enry_point(int line, void *addr)
+{
+	bpoke(0xF800+line, ((unsigned int) addr) & 0x00FF);
+	bpoke(0xF900+line, (((unsigned int) addr) & 0xFF00) >> 8);
+}
+	
 void init_precomp_draw()
 {
 	int line;
@@ -74,7 +80,7 @@ void init_precomp_draw()
 	
 	for (line = 0; line < 192; line++)
 	{
-		entry_pts[line] = &precomp_buffer[precomp_pos];
+		precomp_set_enry_point(line, &precomp_buffer[precomp_pos]);
 		
 		// Write a 8-pixel slice of the span
 		switch (line % 4)
@@ -118,7 +124,7 @@ void init_precomp_draw()
 		}
 	}
 	
-	entry_pts[192] = &precomp_buffer[precomp_pos];
+	precomp_set_enry_point(192, &precomp_buffer[precomp_pos]);
 	precomp_emit(0xC9); //       RET
 	
 	debug_printf("Generated precompiled span draw code, %d bytes\n", precomp_pos);
@@ -168,12 +174,10 @@ _draw_blocks_pg__:
 	cp  l
 	jp  z,_draw_span_pg_case_small
 	
-	ld  b,0
-    ld  hl, _entry_pts
-	add hl,bc
-	add hl,bc
+    ld  h,0xF8
+	ld  l,c
 	ld  e,(hl)
-	inc hl
+	inc h
 	ld  d,(hl)
 	ld  a,(de)
 	ld  c,a		    ; save the previous content of the stop marker
@@ -184,13 +188,10 @@ _draw_blocks_pg__:
 	ld hl,_draw_blocks_pg_ret
 	push hl         ; return address from the draw code
 	
-	ld  c,(ix+6)  ; y0
-	ld  b,0
-    ld  hl, _entry_pts
-	add hl,bc
-	add hl,bc
+	ld  l,(ix+6)  ; y0
+	ld  h,0xF8
 	ld  e,(hl)
-	inc hl
+	inc h
 	ld  d,(hl)
 	push de         ; entry point of the draw code, for line y0 
 	
