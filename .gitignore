@@ -1,4 +1,9 @@
 /*~
 /*.bak
+/*.o
+/*.bin
+/*.map
+/*.tap
+/zcc_opt.def
 /Zxmaze3dGenPrecalc/nbproject/private/
 /Zxmaze3dGenPrecalc/build/
