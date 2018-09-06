@@ -42,6 +42,8 @@
 // Digital frames per second display (faster; if disabled, analog display is shown)
 #define OPTION_DIGITAL_FPS
 
+// Enables the pathwalk for timing when P is pressed
+#define ENABLE_TIMING_PATHWALK
 
 #define COLOR_WALLS	INK_BLUE
 #define COLOR_BACKGROUND INK_BLACK
@@ -61,7 +63,7 @@ char maze[] =
  "################" 
 ;
 
-#ifndef NDEBUG
+#ifdef ENABLE_TIMING_PATHWALK
 void view_debug_pathwalk_draw_on_map();
 #endif
 
@@ -94,7 +96,7 @@ void render_update_map()
 			}
 		}
 	}
-#ifndef NDEBUG
+#ifdef ENABLE_TIMING_PATHWALK
 	view_debug_pathwalk_draw_on_map();
 #endif	
 }
@@ -133,7 +135,7 @@ void debug_draw_directions()
 #endif	
 }
 
-#ifndef NDEBUG
+#ifdef ENABLE_TIMING_PATHWALK
 
 // Debug path walk routines
 
@@ -219,9 +221,10 @@ void view_debug_pathwalk()
 	while (p_segment[1].x != 0);
 	
 	t = timing_elapsed();
-	
-	debug_printf("Time for path walk %ld ms, %d frames, %ld ms per frame, %ld dFPS\n", t, frames, (t/frames), (10000L * frames/t));
-	debug_printf("Press any key to continue...\n");
+
+	printf("\026\040\040");
+	printf("Time for path walk %ld ms, %d frames, %ld ms per frame, %ld dFPS\n", t, frames, (t/frames), (10000L * frames/t));
+	printf("Press any key to continue...\n");
 	in_WaitForKey();	
 	in_WaitForNoKey();
 
@@ -248,7 +251,7 @@ void view_debug_pathwalk_draw_on_map()
 	while (p_segment[1].x != 0);
 }
 
-#endif // NDEBUG
+#endif // ENABLE_TIMING_PATHWALK
 
 // -- Keyboard routines ------------------------------------------------------
 
@@ -266,7 +269,9 @@ uchar keys_map[] = {
 	0xFD, 0x01, CMD_LEFT, // 'A' key, row 3 bit 1
 	0xFD, 0x02, CMD_BACK, // 'S' key, row 3 bit 2
 	0xFD, 0x04, CMD_RIGHT, // 'D' key, row 3 bit 2
+#ifdef ENABLE_TIMING_PATHWALK
 	0xDF, 0x01, CMD_PATHWALK, // 'P' key, row 3 bit 1
+#endif	
 	0
 };
 
@@ -305,7 +310,7 @@ void view_process_cmds()
 		{
 			pos_move_back(view.direction);
 		}
-#ifndef NDEBUG		
+#ifdef ENABLE_TIMING_PATHWALK
 		if ((cmd & CMD_PATHWALK) != 0)
 		{
 		    view_debug_pathwalk();
