@@ -12,13 +12,6 @@
 // fixed range of addresses 60k-62k
 #define UGLY_F_SQRT
 
-#if N_PRECALC_DRAW_DIST!=512
-#error N_PRECALC_DRAW_DIST is expected to be 512 by code in this file. Check if modifications are needed
-#endif
-#if N_PRECALC_FACTOR!=16
-#error N_PRECALC_FACTOR is expected to be 16 by code in this file. Check if modifications are needed
-#endif
-
 int __CALLEE__ f_multiply(int f_a, int f_b)
 {
 	// No saturation check, no early exit check, expects the arg1 to be bottom 8 bits
@@ -248,6 +241,13 @@ _f_multiply_exit_ah:
 	#undef F_MULT_ITERATION_P_8b
 	#undef F_MULT_ITERATION_P_8b_only
 }
+
+#if N_PRECALC_DRAW_DIST!=512
+#error N_PRECALC_DRAW_DIST is expected to be 512 by code in this file. Check if modifications are needed
+#endif
+#if N_PRECALC_FACTOR!=16
+#error N_PRECALC_FACTOR is expected to be 16 by code in this file. Check if modifications are needed
+#endif
 
 /*
 Note: change the number of unrolled loops if parameters change
