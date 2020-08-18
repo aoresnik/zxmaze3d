@@ -11,16 +11,16 @@
  */
 struct state 
 {
-	/*
-	 * Position in fixed point: 1.0 is 256
-	 */
-	int f_pos_x;
-	int f_pos_y;
+    /*
+     * Position in fixed point: 1.0 is 256
+     */
+    int f_pos_x;
+    int f_pos_y;
 
-	/*
-	 * Direction in units of 2*PI/N_DIRECTIONS
-	 */
-	uchar direction;
+    /*
+     * Direction in units of 2*PI/N_DIRECTIONS
+     */
+    uchar direction;
 
 };
 

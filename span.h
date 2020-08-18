@@ -16,19 +16,19 @@
 
 struct maze_vspan
 {
-	uchar direction;
-	uchar n;
-	uchar x;
-	//uchar y0;
-	//uchar y1;
-	//uchar prev_y0;
-	//uchar prev_y1;
-	//uchar prev_height;
-	uint prev_distidx;
-	uint distidx;
-	//uint f_distance;
-	//uchar intensity;
-	//uchar prev_intensity;
+    uchar direction;
+    uchar n;
+    uchar x;
+    //uchar y0;
+    //uchar y1;
+    //uchar prev_y0;
+    //uchar prev_y1;
+    //uchar prev_height;
+    uint prev_distidx;
+    uint distidx;
+    //uint f_distance;
+    //uchar intensity;
+    //uchar prev_intensity;
 };
 
 #ifndef _SPAN_C_INCLUDED

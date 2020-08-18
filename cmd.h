@@ -30,8 +30,8 @@ extern uchar cmd_toggle_snapshot_update(struct t_cmd_toggle_snapshot *snapshot, 
 
 struct t_cmd_toggle_snapshot
 {
-	uchar state;
-	uchar prev_state;
+    uchar state;
+    uchar prev_state;
 };
 
 

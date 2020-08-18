@@ -2,6 +2,8 @@
 
 (So that I don't forget):
 
+* Formatting standard is to indent by 4 spaces, "align { with }" style.
+
 * The map is hardcoded in **zxmaze3d.c**. By default, the program expects 16x8 
 blocks map, but could probably be easily set to 16x16. It could in principle 
 work even with larger world map with some modifications, provided that there's 
