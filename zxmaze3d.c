@@ -515,7 +515,7 @@ uint in_KbdState;            // Reserved variable holds in_GetKey() state
 void main()
 {
     clg();
-    puts("ZXMAZE3D http://andrejo.github.io/zxmaze3d/");
+    puts("ZXMAZE3D http://aoresnik.github.io/zxmaze3d/");
     
     // needed to use in_GetKey, see input.h
     in_GetKeyReset();
