@@ -3,11 +3,6 @@
 import sys
 import re
 
-# Params: file.profile file.map
-#
-# Generates a report of CPU cycles spent in each function from the FUSE
-# emulator profile file and z88dk .map file.
-
 class FuseProfile:
     def __init__(self, fuse_profile_file):
         self.cycle_counts = {};
@@ -75,14 +70,19 @@ class MapFile:
                 return func
         return None
 
+if len(sys.argv) == 2:
+    fuse_profile = FuseProfile(sys.argv[1]);
+    map_file = MapFile(sys.argv[2]);
 
-fuse_profile = FuseProfile(sys.argv[1]);
+    for addr, count in fuse_profile.cycle_counts.items():
+        func = map_file.find_func(addr)
+        if func:
+            func.count = func.count + count
 
-map_file = MapFile(sys.argv[2]);
+    map_file.printProfile()
+else:
+    print("Params: file.profile file.map")
+    print("")
+    print("Generates a report of CPU cycles spent in each function from the FUSE")
+    print("emulator profile file and z88dk .map file.")
 
-for addr, count in fuse_profile.cycle_counts.items():
-     func = map_file.find_func(addr)
-     if func:
-        func.count = func.count + count
-
-map_file.printProfile()
