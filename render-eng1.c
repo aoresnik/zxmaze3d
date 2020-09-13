@@ -692,14 +692,31 @@ _distidx_hypot_for_a2_b_pos:
 #endasm
 
 /*
- * OK, as a global state variable - not the cleanest way, but makes the code run in 55ms instead of 60ms
+ * NOTE: These should be local variables and parameters, but having them as global
+ * variables improves performance significantly (around 10-15%).
+ * WARNING: use must be coordinated between functions
+ */
+
+/*
  * Window which is currently being calculated from p_span (including) to p_end_span (not including).
  * (Ab)used also in some functions that iterate over spans.
  */
 static struct maze_vspan *p_span, *p_end_span;
 
+/*
+ * Variables used in calc_dist_* functions which don't need to be preserved
+ * across nested function calls.
+ */
+static int f_x1, f_y1;
 
 void view_calc_edges(struct t_maze_sector *sector);
+
+/*
+ * These functions are the same code, but with different variables and
+ * directions (different +/-, or >/< orientations).
+ * This could be unified by macros. NOTE: as of z88dk 1.10.1 the macros are
+ * limited in length, which presents some challenges for using them here.
+ */
 
 void calc_dist_horiz_edge_n(struct t_maze_sector *sector);
 
@@ -712,9 +729,8 @@ void calc_dist_vert_edge_w(struct t_maze_sector *sector);
 void calc_dist_horiz_edge_n(struct t_maze_sector *sector)
 {
     int f_dy;
-    int f_x1;
     long b;
-    struct maze_vspan *p_end_span1;
+    struct maze_vspan *p_end_span_save;
     struct t_sector_boundary *p_bound;
     int f_dx;
 
@@ -749,11 +765,11 @@ void calc_dist_horiz_edge_n(struct t_maze_sector *sector)
             }
             else // if ((p_bound->neighbour_boundary != NULL)
             {
-                p_end_span1 = p_end_span;
+                p_end_span_save = p_end_span;
                 p_end_span = p_span;
                 while (f_dx <= f_x1)
                 {
-                    if (++p_end_span >= p_end_span1)
+                    if (++p_end_span >= p_end_span_save)
                     {
                         break;
                     }
@@ -767,7 +783,7 @@ void calc_dist_horiz_edge_n(struct t_maze_sector *sector)
                 {
                     view_calc_edges(p_bound->neighbour_sector);
                 }
-                p_end_span = p_end_span1;
+                p_end_span = p_end_span_save;
             }
             p_bound = p_bound->next_in_edge;
         }
@@ -782,9 +798,8 @@ void calc_dist_horiz_edge_n(struct t_maze_sector *sector)
 void calc_dist_horiz_edge_s(struct t_maze_sector *sector)
 {
     int f_dy;
-    int f_x1;
     long b;
-    struct maze_vspan *p_end_span1;
+    struct maze_vspan *p_end_span_save;
     struct t_sector_boundary *p_bound;
     int f_dx;
 
@@ -818,11 +833,11 @@ void calc_dist_horiz_edge_s(struct t_maze_sector *sector)
             }
             else // if ((p_bound->neighbour_boundary != NULL)
             {
-                p_end_span1 = p_end_span;
+                p_end_span_save = p_end_span;
                 p_end_span = p_span;
                 while (f_dx >= f_x1)
                 {
-                    if (++p_end_span >= p_end_span1)
+                    if (++p_end_span >= p_end_span_save)
                     {
                         break;
                     }
@@ -836,7 +851,7 @@ void calc_dist_horiz_edge_s(struct t_maze_sector *sector)
                 {
                     view_calc_edges(p_bound->neighbour_sector);
                 }
-                p_end_span = p_end_span1;
+                p_end_span = p_end_span_save;
             }
             p_bound = p_bound->next_in_edge;
         }
@@ -851,9 +866,8 @@ void calc_dist_horiz_edge_s(struct t_maze_sector *sector)
 void calc_dist_vert_edge_e(struct t_maze_sector *sector)
 {
     int f_dx;
-    int f_y1;
     long a;
-    struct maze_vspan *p_end_span1;
+    struct maze_vspan *p_end_span_save;
     struct t_sector_boundary *p_bound;
     int f_dy;
 
@@ -887,11 +901,11 @@ void calc_dist_vert_edge_e(struct t_maze_sector *sector)
             }
             else // if ((p_bound->neighbour_boundary != NULL)
             {
-                p_end_span1 = p_end_span;
+                p_end_span_save = p_end_span;
                 p_end_span = p_span;
                 while (f_dy <= f_y1)
                 {
-                    if (++p_end_span >= p_end_span1)
+                    if (++p_end_span >= p_end_span_save)
                     {
                         break;
                     }
@@ -905,7 +919,7 @@ void calc_dist_vert_edge_e(struct t_maze_sector *sector)
                 {
                     view_calc_edges(p_bound->neighbour_sector);
                 }
-                p_end_span = p_end_span1;
+                p_end_span = p_end_span_save;
             }
             p_bound = p_bound->next_in_edge;
         }
@@ -920,9 +934,8 @@ void calc_dist_vert_edge_e(struct t_maze_sector *sector)
 void calc_dist_vert_edge_w(struct t_maze_sector *sector)
 {
     int f_dx;
-    int f_y1;
     long a;
-    struct maze_vspan *p_end_span1;
+    struct maze_vspan *p_end_span_save;
     struct t_sector_boundary *p_bound;
     int f_dy;
 
@@ -961,11 +974,11 @@ void calc_dist_vert_edge_w(struct t_maze_sector *sector)
             {
                 // this got printed where it shouldn't have been (looking NW)
                 // solved by  reordering fields in struct maze_vspan
-                p_end_span1 = p_end_span;
+                p_end_span_save = p_end_span;
                 p_end_span = p_span;
                 while (f_dy >= f_y1)
                 {
-                    if (++p_end_span >= p_end_span1)
+                    if (++p_end_span >= p_end_span_save)
                     {
                         break;
                     }
@@ -979,7 +992,7 @@ void calc_dist_vert_edge_w(struct t_maze_sector *sector)
                 {
                     view_calc_edges(p_bound->neighbour_sector);
                 }
-                p_end_span = p_end_span1;
+                p_end_span = p_end_span_save;
             }
             p_bound = p_bound->next_in_edge;
         }
