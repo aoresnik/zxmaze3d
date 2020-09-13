@@ -6,7 +6,7 @@
 #include <games.h>
 #include <sound.h>
 #include <im2.h>
-#include <conio.h> 
+#include <conio.h>
 #include <string.h>
 
 #include "timing.h"
@@ -34,10 +34,10 @@ void draw_span_test_patterns()
     struct t_span *p_span, *p_span_end;
     int bytes;
     int kbps;
-    
+
     center = 17;
     p_span = spans;
-    
+
     for (i = 0; i <= N_INTENSITIES-1; i++)
     {
         if (center + i < 32)
@@ -63,7 +63,7 @@ void draw_span_test_patterns()
         p_span->y0 = 47-i;
         p_span->y1 = 48;
         p_span->intensity = i;
-        
+
         p_span++;
     }
     p_span_end = p_span;
@@ -81,9 +81,9 @@ void draw_span_test_patterns()
         draw_span(p_span->x, p_span->y0, p_span->y1, p_span->intensity);
     }
     duration = timing_elapsed_us();
-    
+
     kbps = 1000L * bytes / duration;
-    
+
     printf("Drawn span test patterns - %d bytes in %ld us, %d kB/s\n", bytes, duration, kbps);
 }
 
@@ -100,10 +100,10 @@ void draw_span_test_patterns2()
     struct t_span *p_span, *p_span_end;
     int bytes;
     int kbps;
-    
+
     center = 17;
     p_span = spans;
-    
+
     for (i = 0; i <= N_INTENSITIES-1; i++)
     {
         if (center + i < 32)
@@ -133,7 +133,7 @@ void draw_span_test_patterns2()
         p_span->y0 = 47-i;
         p_span->y1 = 48;
         p_span->intensity = i;
-        
+
         p_span++;
     }
     p_span_end = p_span;
@@ -151,9 +151,9 @@ void draw_span_test_patterns2()
         draw_span(p_span->x, p_span->y0, p_span->y1, p_span->intensity);
     }
     duration = timing_elapsed();
-    
+
     kbps = bytes / duration;
-    
+
     printf("Drawn span test patterns - %d bytes in %ld ms, %d kB/s\n", bytes, duration, kbps);
 }
 
@@ -163,7 +163,7 @@ void draw_span_test_patterns3()
     long duration;
     int bytes;
     int kbps;
-    
+
     bytes = 8 * 32 * 24;
 
     timing_start();
@@ -200,9 +200,9 @@ void draw_span_test_patterns3()
     draw_blocks(16414, 0, 192, &ht_bits[1 * 8]);
     draw_blocks(16415, 0, 192, &ht_bits[0 * 8]);
     duration = timing_elapsed();
-    
+
     kbps = bytes / duration;
-    
+
     printf("Drawn span test patterns - %d bytes in %ld ms, %d kB/s\n", bytes, duration, kbps);
 }
 
@@ -216,15 +216,15 @@ void draw_span_test_animation2()
     int pos;
     int intensity;
     void *patterns[64];
-    
+
     shift = 0;
     nshown = 0;
-    
+
     // Scale for FPS meter
     for (i = 0; i < 50; i++)
     {
         plot(i * 2, 190);
-        
+
         // every 10 ticks
         if (i % 10 == 0)
         {
@@ -274,7 +274,7 @@ void draw_span_test_animation2()
         draw_blocks(16413, 0, 184, patterns[29 + shift]);
         draw_blocks(16414, 0, 184, patterns[30 + shift]);
         draw_blocks(16415, 0, 184, patterns[31 + shift]);
-        
+
         shift = (shift + 1) % 32;
         nshown++;
         if (nshown == 10)
@@ -282,7 +282,7 @@ void draw_span_test_animation2()
             time = clock();
             fps = (nshown * 50) / (time-prev_time);
             prev_time = time;
-            
+
             // FPS meter
             for (i = 0; i <= fps; i++)
             {
@@ -306,22 +306,22 @@ void draw_span_test_animation()
     int fps;
     long time, prev_time;
     int pos;
-    
+
     shift = 0;
     nshown = 0;
-    
+
     // Scale for FPS meter
     for (i = 0; i < 50; i++)
     {
         plot(i * 2, 172);
-        
+
         // every 10 ticks
         if (i % 10 == 0)
         {
             plot(i * 2, 173);
         }
     }
-                
+
     prev_time = clock();
     while (in_Inkey() == 0)
     {
@@ -337,7 +337,7 @@ void draw_span_test_animation()
             time = clock();
             fps = (nshown * 50) / (time-prev_time);
             prev_time = time;
-            
+
             // FPS meter
             for (i = 0; i <= fps; i++)
             {
@@ -357,7 +357,7 @@ main()
 {
     long duration;
     int kbps;
-    
+
     clg();
 
     span_init();
@@ -366,31 +366,30 @@ main()
     timing_start();
     clg();
     duration = timing_elapsed();
-    
+
     // 6144 is the number of bytes of screen
     // ms and kb cancel out: (6144  / 1000) / (duration / 1000)
     kbps = 6144  / (int) duration;
-    
+
     printf("clg() in %ld ms; fill rate %d kB/s\n", duration, kbps);
-    
+
 //    draw_precompiled_span_test_patterns();
 
     draw_span_test_patterns();
 
-    in_WaitForKey();    
+    in_WaitForKey();
     in_WaitForNoKey();
-    
+
     draw_span_test_patterns3();
 
-    
-    
-    in_WaitForKey();    
+
+
+    in_WaitForKey();
     in_WaitForNoKey();
-    
+
 
     clg();
 
     draw_span_test_animation();
 
 }
-

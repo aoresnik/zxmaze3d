@@ -39,12 +39,12 @@ struct maze_vspan
 extern void span_init();
 
 /*
- * Paints the 8-pixels wide vertical span in column cx (0..32), with Bayer halftone pattern 
- * of intensity (but could in principle draw any other 8x8 pattern), from line y0 (0..191) 
+ * Paints the 8-pixels wide vertical span in column cx (0..32), with Bayer halftone pattern
+ * of intensity (but could in principle draw any other 8x8 pattern), from line y0 (0..191)
  * to line y1 (0..191).
- * 
+ *
  * Expects y1 > y0.
- * 
+ *
  * Fills the specified span with halftone 4x4 pattern of intensity
  * (supported levels are from INTENSITY_BLACK to INTENSITY_WHITE).
  */
@@ -59,7 +59,7 @@ extern void __FASTCALL__ span_update(struct maze_vspan *p_span);
 
 /*
  * Bitmap of all N_INTENSITIES intensities from black to white, 8-byte each, 8x8 pixels
- */ 
+ */
 extern uchar ht_bits[];
- 
+
 #endif // defined _SPAN_C_INCLUDED

@@ -22,22 +22,22 @@
  * Computed with HT4x4Generate.java
  */
 uchar ht_bits[] = {
-0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 
-0xee, 0xff, 0xff, 0xff, 0xee, 0xff, 0xff, 0xff, 
-0xee, 0xff, 0xbb, 0xff, 0xee, 0xff, 0xbb, 0xff, 
-0xee, 0xff, 0xaa, 0xff, 0xee, 0xff, 0xaa, 0xff, 
-0xaa, 0xff, 0xaa, 0xff, 0xaa, 0xff, 0xaa, 0xff, 
-0xaa, 0xdd, 0xaa, 0xff, 0xaa, 0xdd, 0xaa, 0xff, 
-0xaa, 0xdd, 0xaa, 0x77, 0xaa, 0xdd, 0xaa, 0x77, 
-0xaa, 0xdd, 0xaa, 0x55, 0xaa, 0xdd, 0xaa, 0x55, 
-0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 
-0xaa, 0x44, 0xaa, 0x55, 0xaa, 0x44, 0xaa, 0x55, 
-0xaa, 0x44, 0xaa, 0x11, 0xaa, 0x44, 0xaa, 0x11, 
-0xaa, 0x44, 0xaa, 0x00, 0xaa, 0x44, 0xaa, 0x00, 
-0xaa, 0x00, 0xaa, 0x00, 0xaa, 0x00, 0xaa, 0x00, 
-0x88, 0x00, 0xaa, 0x00, 0x88, 0x00, 0xaa, 0x00, 
-0x88, 0x00, 0x22, 0x00, 0x88, 0x00, 0x22, 0x00, 
-0x88, 0x00, 0x00, 0x00, 0x88, 0x00, 0x00, 0x00, 
+0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+0xee, 0xff, 0xff, 0xff, 0xee, 0xff, 0xff, 0xff,
+0xee, 0xff, 0xbb, 0xff, 0xee, 0xff, 0xbb, 0xff,
+0xee, 0xff, 0xaa, 0xff, 0xee, 0xff, 0xaa, 0xff,
+0xaa, 0xff, 0xaa, 0xff, 0xaa, 0xff, 0xaa, 0xff,
+0xaa, 0xdd, 0xaa, 0xff, 0xaa, 0xdd, 0xaa, 0xff,
+0xaa, 0xdd, 0xaa, 0x77, 0xaa, 0xdd, 0xaa, 0x77,
+0xaa, 0xdd, 0xaa, 0x55, 0xaa, 0xdd, 0xaa, 0x55,
+0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55,
+0xaa, 0x44, 0xaa, 0x55, 0xaa, 0x44, 0xaa, 0x55,
+0xaa, 0x44, 0xaa, 0x11, 0xaa, 0x44, 0xaa, 0x11,
+0xaa, 0x44, 0xaa, 0x00, 0xaa, 0x44, 0xaa, 0x00,
+0xaa, 0x00, 0xaa, 0x00, 0xaa, 0x00, 0xaa, 0x00,
+0x88, 0x00, 0xaa, 0x00, 0x88, 0x00, 0xaa, 0x00,
+0x88, 0x00, 0x22, 0x00, 0x88, 0x00, 0x22, 0x00,
+0x88, 0x00, 0x00, 0x00, 0x88, 0x00, 0x00, 0x00,
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
@@ -71,70 +71,70 @@ void precomp_set_enry_point(int line, void *addr)
     bpoke(0xF800+line, ((unsigned int) addr) & 0x00FF);
     bpoke(0xF900+line, (((unsigned int) addr) & 0xFF00) >> 8);
 }
-    
+
 void init_precomp_draw()
 {
     int line;
-    
+
     precomp_pos = 0;
-    
+
     for (line = 0; line < 192; line++)
     {
         precomp_set_enry_point(line, &precomp_buffer[precomp_pos]);
-        
+
         // Write a 8-pixel slice of the span
         switch (line % 4)
         {
             case 0:
-                precomp_emit(0x71); //       LD   (HL),C 
+                precomp_emit(0x71); //       LD   (HL),C
                 break;
             case 1:
-                precomp_emit(0x73); //       LD   (HL),E 
+                precomp_emit(0x73); //       LD   (HL),E
                 break;
             case 2:
-                precomp_emit(0x72); //       LD   (HL),D 
+                precomp_emit(0x72); //       LD   (HL),D
                 break;
             case 3:
-                precomp_emit(0x70); //       LD   (HL),B 
+                precomp_emit(0x70); //       LD   (HL),B
         }
-        
+
         // Move HL to new line
         if (((line + 1) % 64) == 0)
         {
-            precomp_emit(0x3E); //       LD   A,20H  
+            precomp_emit(0x3E); //       LD   A,20H
             precomp_emit(0x20); //
-            precomp_emit(0x85); //       ADD  L      
-            precomp_emit(0x6F); //       LD   L,A    
-            precomp_emit(0x24); //       INC  H      
+            precomp_emit(0x85); //       ADD  L
+            precomp_emit(0x6F); //       LD   L,A
+            precomp_emit(0x24); //       INC  H
         }
         else if (((line + 1) % 8) == 0)
         {
-            precomp_emit(0x3E); //       LD   A,20H  
+            precomp_emit(0x3E); //       LD   A,20H
             precomp_emit(0x20); //
-            precomp_emit(0x85); //       ADD  L      
-            precomp_emit(0x6F); //       LD   L,A    
-            precomp_emit(0x3E); //       LD   A,F9H  
+            precomp_emit(0x85); //       ADD  L
+            precomp_emit(0x6F); //       LD   L,A
+            precomp_emit(0x3E); //       LD   A,F9H
             precomp_emit(0xF9); //
-            precomp_emit(0x84); //       ADD  H      
-            precomp_emit(0x67); //       LD   H,A    
+            precomp_emit(0x84); //       ADD  H
+            precomp_emit(0x67); //       LD   H,A
         }
-        else 
+        else
         {
-            precomp_emit(0x24); //       INC  H      
+            precomp_emit(0x24); //       INC  H
         }
     }
-    
+
     precomp_set_enry_point(192, &precomp_buffer[precomp_pos]);
     precomp_emit(0xC9); //       RET
-    
+
     debug_printf("Generated precompiled span draw code, %d bytes\n", precomp_pos);
 }
 
 /*
- * Paints the 8-pixels wide vertical span in column cx (0..32), with Bayer halftone pattern 
- * of intensity (but could in principle draw any other 8x8 pattern), from line y0 (0..191) 
+ * Paints the 8-pixels wide vertical span in column cx (0..32), with Bayer halftone pattern
+ * of intensity (but could in principle draw any other 8x8 pattern), from line y0 (0..191)
  * to line y1 (0..191); y1 > y0.
- * 
+ *
  * Fills the specified span with halftone 4x4 pattern of intensity
  * (supported levels are from INTENSITY_BLACK to INTENSITY_WHITE).
  *
@@ -146,12 +146,12 @@ void draw_span(uchar cx, uchar y0, uchar y1, uchar intensity);
 _draw_blocks:
     ld    ix,0
     add    ix,sp
-    
+
     ld    e,(ix+8)    ; p_scr
-    ld    d,(ix+9)    ; 
-    
+    ld    d,(ix+9)    ;
+
     ld    l,(ix+2)    ; p_pat
-    ld    h,(ix+3)    ; 
+    ld    h,(ix+3)    ;
     push hl
 
     ld  a,(ix+6) ; y0
@@ -160,20 +160,20 @@ _draw_blocks:
 _draw_span:
     ld    ix,0
     add    ix,sp
-    
+
 ; TODO: for draw_blocks
 _draw_blocks_pg__:
     ld  a,(ix+6) ; y0
     and 0xF8
     ld  l,a
-    
+
     ld  c,(ix+4)  ; y1
-    
+
     ld  a,c
     and 0xF8
     cp  l
     jp  z,_draw_span_pg_case_small
-    
+
     ld  h,0xF8
     ld  l,c
     ld  e,(hl)
@@ -181,20 +181,20 @@ _draw_blocks_pg__:
     ld  d,(hl)
     ld  a,(de)
     ld  c,a            ; save the previous content of the stop marker
-    ld  a,0xC9      
+    ld  a,0xC9
     ld  (de),a      ; write RET
     exx             ; save the address of the stop marker and prev byte
-    
+
     ld hl,_draw_blocks_pg_ret
     push hl         ; return address from the draw code
-    
+
     ld  l,(ix+6)  ; y0
     ld  h,0xF8
     ld  e,(hl)
     inc h
     ld  d,(hl)
-    push de         ; entry point of the draw code, for line y0 
-    
+    push de         ; entry point of the draw code, for line y0
+
     ld  h,0
     ld    l,(ix+2)    ; intensity
     add hl,hl
@@ -215,20 +215,20 @@ _draw_blocks_pg__:
 
     ; calculate the screen address
     ld    h,2
-    
+
     ld  a,(ix+6) ; y0
-    sla a    
+    sla a
     rl  h    ; y7
-    sla a   
+    sla a
     rl  h    ; y6
     sla h
     sla h
     sla h
-    
+
     and $E0 ; y5..y3
     or (ix+8)    ; x4..x0
     ld l,a
-    
+
     ld  a,(ix+6) ; y0
     and $07  ; y2..y0
     or  h
@@ -236,37 +236,37 @@ _draw_blocks_pg__:
 
     ret  ; call the draw routine, address is on stack
 _draw_blocks_pg_ret:
-    exx             ; 
+    exx             ;
     ld a,c
     ld (de),a       ; restore the previous value of the end marker
 
     ret
-    
+
 ._draw_span_pg_case_small
     ld    d,2
-    
+
     ld  b,(ix+6) ; y0 kept in b, c or a as long as possible
     ld  a,b
-    sla a    
+    sla a
     rl  d    ; y7
-    sla a   
+    sla a
     rl  d    ; y6
     sla d
     sla d
     sla d
-    
+
     and $E0 ; y5..y3
     or (ix+8)    ; x4..x0
     ld e,a
-    
+
     ld  a,b  ; y0
     and $07  ; y2..y0
     or  d
     ld  d,a
     ; DE now contains the addres for byte at (cx, y0)
-    
+
     ld  a,b   ; y0
-    
+
     ld  h,0
     ld    l,(ix+2)    ; intensity
     add hl,hl
@@ -275,7 +275,7 @@ _draw_blocks_pg_ret:
     ld bc,_ht_bits
     add hl,bc
     ; HL now contains the pointer to pattern
-    
+
     ; increase hl for yskip bytes
     ; y0 in a
     ld  b,a    ; y0
@@ -289,31 +289,31 @@ _draw_blocks_pg_ret:
     add a,(ix+4)    ; y1
     ret z
     ld  b,a         ; lines to draw
-_draw_block_l00__small1:    
+_draw_block_l00__small1:
     ld a,(hl)
     ld (de),a
     inc hl
        inc d
     djnz _draw_block_l00__small1
     ret
-    
+
 #endasm
 
-#else 
+#else
 
 /*
- * Paints the 8-pixels wide vertical span in column cx (0..32), with Bayer halftone pattern 
- * of intensity (but could in principle draw any other 8x8 pattern), from line y0 (0..191) 
+ * Paints the 8-pixels wide vertical span in column cx (0..32), with Bayer halftone pattern
+ * of intensity (but could in principle draw any other 8x8 pattern), from line y0 (0..191)
  * to line y1 (0..191); y1 > y0.
- * 
+ *
  * Fills the specified span with halftone 4x4 pattern of intensity
  * (supported levels are from INTENSITY_BLACK to INTENSITY_WHITE).
  *
  * (this is a regular version, without precompiled unrolled loops)
  *
  * NOTE: Why the complexity?
- * 
- * In ZX Spectrum memory layout, it's slow to move pointer to a screen address to the next 
+ *
+ * In ZX Spectrum memory layout, it's slow to move pointer to a screen address to the next
  * line in general. But if the pointer points to a line y that is not y%8 == 7 (i.e. not the
  * last line in a 8x8 cell), it's very fast: you only increase it by 0x100.
  *
@@ -321,7 +321,7 @@ _draw_block_l00__small1:
  * line with simple "INC H" instruction. This is by design (it speeds up drawing of characters
  * and makes up a bit of lost speed because Spectrum's lacks a true text mode).
  *
- * This function is optimized by making it keep track where it is and uses fast advance if it 
+ * This function is optimized by making it keep track where it is and uses fast advance if it
  * can, slow advance if it can't.
  */
 void draw_span(uchar cx, uchar y0, uchar y1, uchar intensity);
@@ -331,12 +331,12 @@ void draw_span(uchar cx, uchar y0, uchar y1, uchar intensity);
 ._draw_blocks
     ld    ix,0
     add    ix,sp
-    
+
     ld    e,(ix+8)    ; p_scr
-    ld    d,(ix+9)    ; 
-    
+    ld    d,(ix+9)    ;
+
     ld    l,(ix+2)    ; p_pat
-    ld    h,(ix+3)    ; 
+    ld    h,(ix+3)    ;
     push hl            ; keep p_pat on stack
     ld  a,(ix+6) ; y0
     jp _draw_blocks11111
@@ -344,31 +344,31 @@ void draw_span(uchar cx, uchar y0, uchar y1, uchar intensity);
 ._draw_span
     ld    ix,0
     add    ix,sp
-    
+
     ld    d,2
-    
+
     ld  b,(ix+6) ; y0 kept in b, c or a as long as possible
     ld  a,b
-    sla a    
+    sla a
     rl  d    ; y7
-    sla a   
+    sla a
     rl  d    ; y6
     sla d
     sla d
     sla d
-    
+
     and $E0 ; y5..y3
     or (ix+8)    ; x4..x0
     ld e,a
-    
+
     ld  a,b  ; y0
     and $07  ; y2..y0
     or  d
     ld  d,a
     ; DE now contains the addres for byte at (cx, y0)
-    
+
     ld  a,b   ; y0
-    
+
     ld  h,0
     ld    l,(ix+2)    ; intensity
     add hl,hl
@@ -378,9 +378,9 @@ void draw_span(uchar cx, uchar y0, uchar y1, uchar intensity);
     add hl,bc
 
     push hl            ; keep p_pat on stack
-    
+
     ; HL now contains the pointer to pattern
-    
+
 _draw_blocks11111:
     ; increase hl for yskip bytes
     ; y0 in a
@@ -394,22 +394,22 @@ _draw_blocks11111:
     and $F8          ; zero if < 8
     neg
     add a,(ix+4)     ; y1
-    
+
     ; if the drawing does not cross 8 boundary, use simpler routine
     cp 8
     jp c,_draw_block_l00__small
-    
+
     ld  b,a         ; ny
-    
+
     ld    a,c            ; yskip
     ld  c,b         ; ny
     and a
     jr  z, _draw_block_l0a   ; in case yskip=0, avoid drawing the beginning
-    
+
     neg             ; a = -yskip
     add a,8
     ld  b,a            ; b = 8-yskip
-    
+
 _draw_block_l00:    ; 37T per iteration
     ld a,(hl)       ; 7T
     ld (de),a       ; 7T
@@ -420,29 +420,29 @@ _draw_block_l00:    ; 37T per iteration
     ld  a,c         ; ny
     sub 8
     ld  b,a
-    
+
     ; de to beginning of line
     ld a,d
     sub 8
     ld d,a
-    
+
     ; Advance de to a next character line
     ld a,e
     add a,32
     ld e,a
     jr nc,_draw_block_l0a
-    
+
     ; In case of overflow, add to the number of lines
     ld a,d
     add a,8
     ld d,a
 
-_draw_block_l0a:    
+_draw_block_l0a:
 
     ; the middle part: character aligned
-    
+
     ; b is expected to contain ny at this point
-    
+
     srl b            ; divide ny by 8 to obtain # of lines
     srl b
     srl b
@@ -462,9 +462,9 @@ _draw_block_l0a:
     ex    af,af
 
     pop hl            ; screen
-    
+
 _draw_block_l1:
-    
+
     ex    af,af
 
     ; hl points to screen
@@ -489,44 +489,44 @@ _draw_block_l1:
     ; Advance hl one line
     ; Contrived. This diagram was helpful:
     ; http://flockofspectrums.wordpress.com/2010/10/02/zx-spectrum-screen-memory/
-    
+
     ; It is not worth adding another loop for only inner-8-group lines because it would only save jr c
     ; Except maybe in fully unrolled code
-    
+
     ; Advance to a next character line
     ld a,l
     add a,32
     ld l,a
     jr c,_draw_block_l1aa
-    
+
     ; return to the first line of character
     ld a,h
     and a,$F8
     ld h,a
-    
+
     djnz _draw_block_l1
-    
+
     jr _draw_block_l1b
-_draw_block_l1aa:    
+_draw_block_l1aa:
     ; In case of overflow, add to the hi byte of address (bits 0-2 are 1)
     inc h
 
     djnz _draw_block_l1
-    
- _draw_block_l1b:    
-    
+
+ _draw_block_l1b:
+
     ; Draw the remaining ny&7 lines
-    
-_draw_block_l2:    
+
+_draw_block_l2:
 
     pop de            ; p_pat
-    
+
     ld  a,(ix+4)
     and a,$07
     ret z            ; return in case 0 more lines to draw
     ld b,a
-    
-_draw_block_l4:    
+
+_draw_block_l4:
     ld a,(de)
     ld (hl),a
     inc de
@@ -534,13 +534,13 @@ _draw_block_l4:
     djnz _draw_block_l4
 
     ret
-    
+
 _draw_block_l2de:
     ; _draw_block_l2 expects hl to point to screen, but at the point of call it is in de
     ld h,d
     ld l,e
     jr _draw_block_l2
-    
+
 _draw_block_l00__small:
     ; c: yskip
     ; a: ny
@@ -549,7 +549,7 @@ _draw_block_l00__small:
     pop bc          ; p_pat (unused)
     ret z
     ld  b,a         ; lines to draw
-_draw_block_l00__small1:    
+_draw_block_l00__small1:
     ld a,(hl)
     ld (de),a
     inc hl
@@ -619,36 +619,36 @@ void __FASTCALL__ span_update(struct maze_vspan *p_span)
 #asm
     push hl
     pop  ix
-    
+
 #endasm
 
     ASM_LOAD_PSPAN_WORD(d, e, OFFSET_DISTIX);
     ASM_LOAD_PSPAN_WORD(b, c, OFFSET_PREV_DISTIX);
-    
+
 #asm
     ld  h,b
     ld  l,c
     and a
     sbc hl, de
-    
+
     ret  z        ; no change in distance
-    
+
     jp   nc, _span_update_closer
-    
-_span_update_farther:    
-    
+
+_span_update_farther:
+
 #endasm
-    
+
     ASM_PUSH_PSPAN_BYTE(OFFSET_N);
     ASM_PUSH_LUT_BYTE(draw_heigths, REG_PREV_DISTIDX);
     ASM_PUSH_LUT_BYTE(draw_heigths, REG_DISTIDX);
     ASM_PUSH_CONST_BYTE(INTENSITY_WHITE);
-    
+
     ASM_PUSH_PSPAN_BYTE(OFFSET_N);
     ASM_PUSH_LUT_BYTE(draw_heigths1, REG_DISTIDX);
     ASM_PUSH_LUT_BYTE(draw_heigths1, REG_PREV_DISTIDX);
     ASM_PUSH_CONST_BYTE(INTENSITY_WHITE);
-    
+
     ASM_LUT_LOAD_BYTE(a, draw_intens, REG_DISTIDX);
     ASM_LUT_LOAD_BYTE(l, draw_intens, REG_PREV_DISTIDX);
 #asm
@@ -667,15 +667,15 @@ _span_update_farther:
 #asm
 
     jp   _span_update_draw3
-    
-_span_update_closer:    
-    
+
+_span_update_closer:
+
 #endasm
     ASM_LUT_LOAD_BYTE(a, draw_intens, REG_DISTIDX);
     ASM_LUT_LOAD_BYTE(l, draw_intens, REG_PREV_DISTIDX);
 #asm
     cp   l
-    
+
     jp   z,_span_update_cl1    ; if equal intensities, only extend
 #endasm
     // different intensities, draw whole
@@ -684,13 +684,13 @@ _span_update_closer:
     ASM_PUSH_LUT_BYTE(draw_heigths, REG_DISTIDX);
     ASM_PUSH_LUT_BYTE(draw_heigths1, REG_DISTIDX);
     ASM_PUSH_LUT_BYTE(draw_intens, REG_DISTIDX);
-    
+
 #asm
     jp   _span_update_draw1
-    
+
 _span_update_cl1:
 #endasm
-    
+
     // Extend exisitng span
     ASM_PUSH_PSPAN_BYTE(OFFSET_N);
     ASM_PUSH_LUT_BYTE(draw_heigths, REG_DISTIDX);
@@ -704,7 +704,7 @@ _span_update_cl1:
 
 #asm
     jp _span_update_draw2
-    
+
 _span_update_draw3:
 #endasm
     // remember the changed distance
@@ -714,7 +714,7 @@ _span_update_draw3:
     ASM_CALL_DRAW_SPAN();
 #asm
     ret
-_span_update_draw2:    
+_span_update_draw2:
 #endasm
     // remember the changed distance
     ASM_STORE_PSPAN_WORD(d, e, OFFSET_PREV_DISTIX);
@@ -722,12 +722,12 @@ _span_update_draw2:
     ASM_CALL_DRAW_SPAN();
 #asm
     ret
-_span_update_draw1:    
+_span_update_draw1:
 #endasm
     // remember the changed distance
     ASM_STORE_PSPAN_WORD(d, e, OFFSET_PREV_DISTIX);
     ASM_CALL_DRAW_SPAN();
-    
+
     #undef ASM_LOAD_PSPAN_BYTE
     #undef ASM_LOAD_PSPAN_WORD
     #undef ASM_STORE_PSPAN_WORD
@@ -750,7 +750,7 @@ _span_update_draw1:
 //     // this function is on critical path and is non-recursive
 //     static uchar intensity, height;
 //     static uint distidx, prev_distidx;
-// 
+//
 //     distidx = p_span->distidx;
 //     prev_distidx = p_span->prev_distidx;
 // #ifndef NDEBUG
@@ -760,29 +760,29 @@ _span_update_draw1:
 //         distidx = N_PRECALC_DRAW_DIST;
 //     }
 // #endif
-// 
+//
 //     // NOTE: relies that spans are vertically symetrical
 //     if (distidx > prev_distidx)
 //     {
 //         // The span is now farther away
 //         intensity = draw_intens[distidx];
-//       
+//
 //         // White (erase)
 //         draw_span(p_span->n, draw_heigths[prev_distidx], draw_heigths[distidx], INTENSITY_WHITE);
 //         draw_span(p_span->n, draw_heigths1[distidx], draw_heigths1[prev_distidx], INTENSITY_WHITE);
-//         
+//
 //         if (intensity != draw_intens[prev_distidx])
 //         {
 //             draw_span(p_span->n, draw_heigths[distidx], draw_heigths1[distidx], intensity);
 //         }
-//         
+//
 //         p_span->prev_distidx = distidx;
 //     }
 //     else if (distidx < prev_distidx)
 //     {
 //         // The span is now closer
 //         intensity = draw_intens[distidx];
-//         
+//
 //         if (intensity != draw_intens[prev_distidx])
 //         {
 //             draw_span(p_span->n, draw_heigths[distidx], draw_heigths1[distidx], intensity);
@@ -793,10 +793,10 @@ _span_update_draw1:
 //             draw_span(p_span->n, draw_heigths[distidx], draw_heigths[prev_distidx], intensity);
 //             draw_span(p_span->n, draw_heigths1[prev_distidx], draw_heigths1[distidx], intensity);
 //         }
-//         
+//
 //         p_span->prev_distidx = distidx;
 //     }
-// }        
+// }
 
 
 void span_init()

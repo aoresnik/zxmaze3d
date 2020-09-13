@@ -31,14 +31,14 @@ uchar cmds_get_next()
         cmd = cmds[cmds_head];
         cmds_head = (cmds_head + 1) & CMDS_SIZE_MASK;
     }
-    
+
     return cmd;
 }
 
 void cmds_put(uchar cmd)
 {
     uchar n;
-    
+
     n = (cmds_tail + 1) & CMDS_SIZE_MASK;
 
     // If ring buffer not full
@@ -63,7 +63,7 @@ uchar cmd_toggle_snapshot_update(struct t_cmd_toggle_snapshot *snapshot, uchar c
 {
     snapshot->prev_state = snapshot->state;
     snapshot->state = cmd_toggle_is_enabled(cmd_t);
-    
+
     return ((snapshot->prev_state != 0) && (snapshot->state == 0) ||
             (snapshot->prev_state == 0) && (snapshot->state != 0));
 }
@@ -81,8 +81,8 @@ uchar cmd_read_kbd(void);
     ld h,a
     ld d,0
     ld c,$FE            ; low byte for IO port = 0xFE for ULA
-    
-_cmd_read_kbd_1:    
+
+_cmd_read_kbd_1:
     ld a,(hl)            ; read A15-A8 byte of address
     and a
     jr z,_cmd_read_kbd_exit
@@ -98,13 +98,13 @@ _cmd_read_kbd_1:
     ld d,a
     inc hl
     jp _cmd_read_kbd_1
-    
+
 _cmd_read_kbd_next:
     ; key not pressed
     inc hl
     inc hl
     jp _cmd_read_kbd_1
-    
+
 _cmd_read_kbd_exit:
     ld l,d
     ret
@@ -124,8 +124,8 @@ void cmd_read_kbd_toggle_state(void);
     ld h,a
     ld de,1                ; D - current state of toggle keys, E - current bit
     ld c,$FE            ; low byte for IO port = 0xFE for ULA
-    
-_cmd_read_kbd_toggle_1:    
+
+_cmd_read_kbd_toggle_1:
     ld a,(hl)            ; read A15-A8 byte of address
     and a
     jr z,_cmd_read_kbd_toggle_exit
@@ -134,28 +134,28 @@ _cmd_read_kbd_toggle_1:
     inc hl
     and (hl)            ; and with mask
     jr nz,_cmd_read_kbd_toggle_next
-    
+
     ; key pressed
     ld a,d
     or e                ; or with cmd
     ld d,a
-    
+
     ; does it represent a change from prev state?
     ld a,(_cmd_prev_toggle_keys)
     and e
     jr nz,_cmd_read_kbd_toggle_next
-    
+
     ; prev state was not pressed, current state pressed - toggle the bit
     ld a,(_cmd_toggle)
     xor e
     ld (_cmd_toggle),a
-    
+
 _cmd_read_kbd_toggle_next:
     ; key not pressed
     inc hl
     sla e
     jp _cmd_read_kbd_toggle_1
-    
+
 _cmd_read_kbd_toggle_exit:
     ld a,d
     ld (_cmd_prev_toggle_keys),a
@@ -169,37 +169,37 @@ M_BEGIN_ISR(cmd_isr)
     rst $38       ; Keep the keyboard and FRAMES working by running also a standard ISR
 
     ; Read the command keys
-    call _cmd_read_kbd 
+    call _cmd_read_kbd
     xor a
     cp l
     jr z,_cmd_isr_no_enqueue
-    
+
     ; If one or more is pressed, enqueue to cmd queue
     push hl
     call _cmds_put
     pop hl
-    
-_cmd_isr_no_enqueue:    
+
+_cmd_isr_no_enqueue:
 
 #ifndef NDEBUG
     ; display cmd bits on screen as pixels in row 0
     ld a,l
     ld hl,16384+26
     ld (hl),a
-#endif   
+#endif
 
     ; Update the toggle key states
     call _cmd_read_kbd_toggle_state
 
 #ifndef NDEBUG
-    ; display toggle bits on screen as pixels 
+    ; display toggle bits on screen as pixels
     ld a,(_cmd_toggle)
     ld hl,16384+27
     ld (hl),a
-#endif   
-   
+#endif
+
 ._cmd_isr_exit
-    
+
    #endasm
 }
 M_END_ISR

@@ -24,4 +24,3 @@ long timing_elapsed_us();
 
 extern uint t_loops;
 
-

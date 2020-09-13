@@ -9,7 +9,7 @@
  * Represents the viewpoint of the player: coordinates and direction.
  * It also encapsulates other precomputed data, that are dependent on them.
  */
-struct state 
+struct state
 {
     /*
      * Position in fixed point: 1.0 is 256
@@ -35,4 +35,3 @@ extern struct state view;
 extern void state_init();
 
 #endif // defined _STATE_C_INCLUDED
-

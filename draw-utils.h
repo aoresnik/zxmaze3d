@@ -17,4 +17,3 @@ extern void draw_attr_colored_area(uchar x0, uchar y0, uchar x1, uchar y1, uchar
 extern void draw_init();
 
 #endif // defined _DRAW_C_INCLUDED
-

@@ -6,4 +6,3 @@
 extern void irq_set_isr(void *isr);
 
 #endif // defined _IRQ_C_INCLUDED
-

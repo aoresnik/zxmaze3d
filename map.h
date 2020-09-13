@@ -34,4 +34,3 @@ extern uchar maze_in_boundary_f(int f_x, int f_y);
 extern void map_init(uchar *map);
 
 #endif // defined _MAP_C_INCLUDED
-

@@ -2,7 +2,7 @@
 
 /*
  * Starts processing the specified key maps in the background
- * 
+ *
  * NOTE Uses fixed addresses from 0xFDFD to 0xFF01 (260 bytes) which are unusable for other purposes!
  */
 extern void cmd_init(uchar *a_keys_map, uchar *a_toggle_keys_map);
@@ -18,7 +18,7 @@ extern uchar cmds_get_next();uchar cmd_toggle_is_enabled(uchar cmd_t);
 extern void cmd_toggle_set(uchar cmd_t, uchar enable);
 
 /*
- * Sets the snapshot to current value of toggle bit state for cmd_t. 
+ * Sets the snapshot to current value of toggle bit state for cmd_t.
  * Returns non-zero if the state changed since last update.
  */
 extern uchar cmd_toggle_snapshot_update(struct t_cmd_toggle_snapshot *snapshot, uchar cmd_t);
@@ -33,5 +33,4 @@ struct t_cmd_toggle_snapshot
     uchar state;
     uchar prev_state;
 };
-
 

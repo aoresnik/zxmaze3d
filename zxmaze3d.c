@@ -2,7 +2,7 @@
  *
  * zxmaze3d
  *
- * Simple 3D room demo for ZX Spectrum. Drawn using halftones. 
+ * Simple 3D room demo for ZX Spectrum. Drawn using halftones.
  * Uses ray-casting algorithm (inspired by Wolfenstein 3D).
  *
  * by Andrej Oresnik 2014
@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <input.h>
 #include <stdlib.h>
-#include <conio.h> 
+#include <conio.h>
 #include <string.h>
 #include <math.h>
 
@@ -52,15 +52,15 @@
 /*
  * Maze contents.
  */
-char maze[] =  
- "################" 
- "#              #" 
- "#              #" 
- "#  ### ### #####" 
- "#  # # #########" 
- "#  # ###       #" 
- "#              #" 
- "################" 
+char maze[] =
+ "################"
+ "#              #"
+ "#              #"
+ "#  ### ### #####"
+ "#  # # #########"
+ "#  # ###       #"
+ "#              #"
+ "################"
 ;
 
 #ifdef ENABLE_TIMING_PATHWALK
@@ -71,7 +71,7 @@ void render_update_map()
 {
     uchar i, j;
     uchar x0, x1, y0, y1;
-    
+
     y1 = map_y(0);
     for (i = 0; i < MAZE_Y; i++)
     {
@@ -98,7 +98,7 @@ void render_update_map()
     }
 #ifdef ENABLE_TIMING_PATHWALK
     view_debug_pathwalk_draw_on_map();
-#endif    
+#endif
 }
 
 void debug_draw_ray(struct maze_vspan *p_span)
@@ -114,7 +114,7 @@ void debug_draw_ray(struct maze_vspan *p_span)
 
     f_x1 = view.f_pos_x + f_multiply(f_dist, f_dir_cos[dir_ray]);
     f_y1 = view.f_pos_y + f_multiply(f_dist, f_dir_sin[dir_ray]);
-    
+
     draw_map_line_fixed(view.f_pos_x, view.f_pos_y, f_x1, f_y1);
 
 //    t_draw = timing_elapsed();
@@ -129,17 +129,17 @@ void debug_draw_directions()
     {
         debug_draw_ray(&spans[i]);
     }
-#else    
+#else
     debug_draw_ray(&spans[0]);
     debug_draw_ray(&spans[31]);
-#endif    
+#endif
 }
 
 #ifdef ENABLE_TIMING_PATHWALK
 
 // Debug path walk routines
 
-struct pathwalk_segment_t 
+struct pathwalk_segment_t
 {
     int x, y;
 };
@@ -158,15 +158,15 @@ struct pathwalk_segment_t pathwalk[] = {
 /*
  * Expected to be called only from view_debug_pathwalk().
  * Moves along the specified line. Does not stop exactly at end (to keep things reasonably fast)!
- * 
+ *
  * Returns the number of frames rendered.
- */ 
+ */
 int view_debug_walk_line(struct pathwalk_segment_t *from, struct pathwalk_segment_t *to)
 {
     int i, steps;
     int delta_x, delta_y;
     int step_x, step_y;
-    
+
     delta_x = to->x - from->x;
     delta_y = to->y - from->y;
 
@@ -179,15 +179,15 @@ int view_debug_walk_line(struct pathwalk_segment_t *from, struct pathwalk_segmen
     {
         steps = abs(delta_y / MOVE_STEP);
     }
-    
+
     step_x = delta_x / steps;
     step_y = delta_y / steps;
-    
+
     view.f_pos_x = from->x;
     view.f_pos_y = from->y;
     view_calc_spans_sectors();
     render_update();
-    
+
     for (i = 0; i < steps; i++)
     {
         view.f_pos_x += step_x;
@@ -195,7 +195,7 @@ int view_debug_walk_line(struct pathwalk_segment_t *from, struct pathwalk_segmen
         view_calc_spans_sectors();
         render_update();
     }
-    
+
     return steps + 1;
 }
 
@@ -208,24 +208,24 @@ void view_debug_pathwalk()
 
     memcpy(&view_save, &view, sizeof(struct state));
     spans_force_redraw();
-    
+
     p_segment = pathwalk;
     frames = 0;
 
     timing_start();
-    do 
+    do
     {
         frames += view_debug_walk_line(p_segment, p_segment + 1);
         p_segment++;
-    } 
+    }
     while (p_segment[1].x != 0);
-    
+
     t = timing_elapsed();
 
     printf("\026\040\040");
     printf("Time for path walk %ld ms, %d frames, %ld ms per frame, %ld dFPS\n", t, frames, (t/frames), (10000L * frames/t));
     printf("Press any key to continue...\n");
-    in_WaitForKey();    
+    in_WaitForKey();
     in_WaitForNoKey();
 
     spans_force_redraw();
@@ -242,12 +242,12 @@ void view_debug_pathwalk_draw_on_map()
     p_segment = pathwalk;
 
     timing_start();
-    do 
+    do
     {
         draw_map_line_fixed(p_segment[0].x, p_segment[0].y, p_segment[1].x, p_segment[1].y);
-        
+
         p_segment++;
-    } 
+    }
     while (p_segment[1].x != 0);
 }
 
@@ -271,7 +271,7 @@ uchar keys_map[] = {
     0xFD, 0x04, CMD_RIGHT, // 'D' key, row 3 bit 2
 #ifdef ENABLE_TIMING_PATHWALK
     0xDF, 0x01, CMD_PATHWALK, // 'P' key, row 3 bit 1
-#endif    
+#endif
     0
 };
 
@@ -314,13 +314,13 @@ void view_process_cmds()
         if ((cmd & CMD_PATHWALK) != 0)
         {
             view_debug_pathwalk();
-            
+
             // Remove commands generated in pathwalk
             while ((cmd = cmds_get_next()) != 0)
             {
             }
         }
-#endif        
+#endif
     }
 }
 
@@ -355,7 +355,7 @@ void fps_draw_scale()
 {
     int i;
     uchar *p_attr;
-    
+
     for (i = 0; i < 125; i++)
     {
         if ((i % 10) == 0)
@@ -364,7 +364,7 @@ void fps_draw_scale()
         }
         plot(i * 2, 191);
     }
-    
+
     p_attr = zx_cyx2aaddr(23, 0);
     memset(p_attr, COLOR_FPS | (COLOR_BACKGROUND << 3), 32);
 }
@@ -375,9 +375,9 @@ void fps_draw_scale()
 void fps_draw_fps(int ftps)
 {
     int i;
-    
+
     ftps = (ftps >= 125) ? 125 : ftps;
-    
+
     for (i = 0; i < ftps; i++)
     {
         plot(i * 2, 188);
@@ -400,18 +400,18 @@ void view_do_game_loop()
     long t_last_fps_upd, t_now;
     int full_redraw_trigger;
     struct t_cmd_toggle_snapshot cmd_t_timings, cmd_t_map;
-    
+
     zx_border(COLOR_BACKGROUND);
     zx_colour(COLOR_WALLS | (COLOR_BACKGROUND << 3));
     // Blue ink, black paper
     printf("\020%d\021%d", COLOR_WALLS, COLOR_BACKGROUND);
-    
+
     fps_draw_scale();
     drawn_frames = 0;
     t_cmd = 0;
     t_last_fps_upd = clock();
     full_redraw_trigger = 1;
-    
+
     while (1)
     {
         if (cmd_toggle_snapshot_update(&cmd_t_timings, CMD_TOGGLE_TEXT))
@@ -422,12 +422,12 @@ void view_do_game_loop()
         {
             full_redraw_trigger = 1;
         }
-        
+
         if (full_redraw_trigger)
         {
             spans_force_redraw();
         }
-    
+
         if (cmd_t_timings.state)
         {
             timing_start();
@@ -437,7 +437,7 @@ void view_do_game_loop()
         {
             t_calc = timing_elapsed();
         }
-    
+
         if (cmd_t_timings.state)
         {
             timing_start();
@@ -454,7 +454,7 @@ void view_do_game_loop()
             }
             full_redraw_trigger = 0;
         }
-        
+
         drawn_frames++;
         t_now = clock();
 
@@ -463,7 +463,7 @@ void view_do_game_loop()
             t_draw = timing_elapsed();
             t_draw_map = 0;
         }
-        
+
         if (cmd_t_map.state)
         {
             if (cmd_t_timings.state)
@@ -477,14 +477,14 @@ void view_do_game_loop()
                 t_draw_map = timing_elapsed();
             }
         }
-        
+
         if (cmd_t_timings.state)
         {
              printf("\026\066\040");
             printf("T[ms]: scene %ld (%ld /span), draw %ld, map %ld, cmd(prev frame) %ld ", t_calc, t_calc/32, t_draw, t_draw_map, t_cmd);
             // Move to (0, 0) for pritouts of errors
              printf("\026\040\040");
-            
+
             timing_start();
         }
 
@@ -493,7 +493,7 @@ void view_do_game_loop()
         {
             // In tenth of frames per second
             fps_draw_fps((drawn_frames * 500) / (t_now - t_last_fps_upd));
-            
+
             drawn_frames = 0;
             t_last_fps_upd = t_now;
         }
@@ -516,7 +516,7 @@ void main()
 {
     clg();
     puts("ZXMAZE3D http://aoresnik.github.io/zxmaze3d/");
-    
+
     // needed to use in_GetKey, see input.h
     in_GetKeyReset();
 
@@ -528,7 +528,7 @@ void main()
     state_init();
     render_init();
     sectors_init();
-    
+
     cmd_toggle_set(CMD_TOGGLE_MAP, 0);
     cmd_toggle_set(CMD_TOGGLE_TEXT, 0);
 
@@ -537,19 +537,18 @@ void main()
     cmd_init(keys_map, toggle_keys_map);
 
     view_init();
-    
+
 #ifndef NDEBUG
 
     debug_printf("Press any key to continue.");
-    in_WaitForKey();    
+    in_WaitForKey();
     in_WaitForNoKey();
-    
+
     clg();
     render_show_debug_screens();
-    
+
 #endif
 
     clg();
     view_do_game_loop();
 }
-

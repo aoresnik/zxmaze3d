@@ -14,4 +14,3 @@ void render_show_debug_screens();
 extern void render_update();
 
 #endif // defined _RENDER_C_INCLUDED
-

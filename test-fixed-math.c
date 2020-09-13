@@ -1,7 +1,7 @@
 
 #include <stdio.h>
 
-#include <conio.h> 
+#include <conio.h>
 #include <graphics.h>
 #include <games.h>
 #include <sound.h>
@@ -14,13 +14,13 @@
 int f_multiply_reference(int f_a, int f_b)
 {
     long tmp;
-    int expected;    
-    
+    int expected;
+
     tmp = ((long) f_a * f_b) >> 8;
     if (tmp > 0x7FFFL)
     {
         expected = 0x7FFF;
-    } 
+    }
     else if (tmp < -0x8000L)
     {
         expected = -0x8000;
@@ -83,12 +83,12 @@ void print_cell_empty()
 {
     printf("      ");
 }
-    
+
 void print_cell_text(char *text)
 {
     printf("%6s", text);
 }
-    
+
 void check_f_multiply_simple(int f_a, int f_b, int type)
 {
     int expected, res;
@@ -100,7 +100,7 @@ void check_f_multiply_simple(int f_a, int f_b, int type)
     if (tmp > 0x7FFFL)
     {
         expected = 0x7FFFL;
-    } 
+    }
     else if (tmp < -0x8000L)
     {
         expected = -0x8000L;
@@ -113,9 +113,9 @@ void check_f_multiply_simple(int f_a, int f_b, int type)
     {
         timing_start();
     }
-    
+
     res = f_multiply(f_a, f_b);
-    
+
     if (type == 1)
     {
         t = timing_elapsed_us();
@@ -152,9 +152,9 @@ void test_f_multiply_1(int test_type)
 {
     int i, j;
 
-      print_cell_text("\\"); 
+      print_cell_text("\\");
       print_cell_text("arg2");
-      
+
       switch (test_type)
       {
         case 0:
@@ -165,9 +165,9 @@ void test_f_multiply_1(int test_type)
           break;
       }
       printf("\n");
-      
+
       print_cell_text("arg1");
-      
+
       for (j = 0; j < TEST_ARGS_SIZE ; j++)
       {
         print_cell_hex_bg(INK_BLACK, INK_WHITE, test_args[j]);
@@ -182,7 +182,7 @@ void test_f_multiply_1(int test_type)
       }
       printf("\n");
     }
-    
+
 }
 
 void test_distidx_sqrt()
@@ -192,7 +192,7 @@ void test_distidx_sqrt()
     uint res;
     uint expected;
     long t;
-    
+
 
     printf("Testing distidx_sqrt ... ");
 
@@ -205,7 +205,7 @@ void test_distidx_sqrt()
         t = timing_elapsed_us();
         printf("(%ld) = %d, ex. %d; %ldus |", param, res, expected, t);
     }
-    
+
     printf("\n");
 }
 
@@ -213,14 +213,14 @@ uint distidx_sqrt_timed(unsigned long f16_l)
 {
     uint result;
     long t;
-    
+
     timing_start();
-    
+
     result = distidx_sqrt(f16_l);
-    
+
     t = timing_elapsed_us();
     printf(" t_sqrt=%ld us |", t);
-    
+
     return result;
 }
 
@@ -231,11 +231,11 @@ main()
 
     test_f_multiply_1(0);
     test_f_multiply_1(1);
-    
+
     printf("Press any key to continue...\n");
-    
-    in_WaitForKey();    
+
+    in_WaitForKey();
     in_WaitForNoKey();
-    
+
     test_distidx_sqrt();
 }

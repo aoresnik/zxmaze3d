@@ -64,7 +64,7 @@ _is_wall_delta:
     add hl,de
     ld a,(hl)
     ld    e,(ix+2)    ; delta
-    ld    d,(ix+3)    ; 
+    ld    d,(ix+3)    ;
     add hl,de
     cp (hl)
     ld hl,0
@@ -138,14 +138,14 @@ _maze_in_boundary_f:
     jr  z, _out_of_boundary
     cp  MAZE_X
     jr  nc, _out_of_boundary
-    
+
     ld    a,(ix+3)    ; f_y hi byte, int part
     cp  0
     jr  z, _out_of_boundary
     cp  MAZE_Y
     jr  nc, _out_of_boundary
 
-_in_boundary:    
+_in_boundary:
     ld hl,1
     ret
 _out_of_boundary:

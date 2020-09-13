@@ -21,10 +21,10 @@ extern  int f_dir_tan[];
 /*
  * Defines the unit of distance that is a resolution of the look-up tables that convert
  * from distance to other values.
- * 
- * By convention, the variables that hold the integer indexes into these tables 
+ *
+ * By convention, the variables that hold the integer indexes into these tables
  * are prefixed by "distidx_".
- * 
+ *
  * This limits distance because factor*distance must be less than 256
  */
 #define N_PRECALC_FACTOR 16
@@ -39,4 +39,3 @@ extern uchar draw_heigths[];
 extern uchar draw_heigths1[];
 // Color intensities of given distance index
 extern uchar draw_intens[];
-

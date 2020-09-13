@@ -24,7 +24,7 @@ _draw_char:
     pop de ; p_screen
     push bc ; ret address
     ld  b,8            ; dy
-    
+
 _draw_char_l1:
     ld a,(hl)
     ld (de),a
@@ -38,11 +38,11 @@ _draw_char_l1:
 void draw_gray_area(uchar x0, uchar y0, uchar x1, uchar y1)
 {
     uchar i;
-    
+
     for (i = 0; i < 8; i += 4)
     {
         draw(x0, y1-i, x1-i, y0);
-        
+
         draw(x1-i, y1, x1, y1-i);
     }
 }
@@ -56,7 +56,7 @@ void draw_map_line_fixed(int maze_x0, int maze_y0, int maze_x1, int maze_y1)
 void draw_stipled_block_horiz(uchar x0, uchar x1, uchar y)
 {
     uchar x;
-    
+
     for (x = x0; x <= x1; x += 2)
     {
         plot(x, y - 2);
@@ -67,7 +67,7 @@ void draw_stipled_block_horiz(uchar x0, uchar x1, uchar y)
 void draw_stipled_block_vert(uchar x, uchar y0, uchar y1)
 {
     uchar y;
-    
+
     for (y =  y0; y <= y1; y += 2)
     {
         plot(x - 2, y);
@@ -78,7 +78,7 @@ void draw_stipled_block_vert(uchar x, uchar y0, uchar y1)
 void draw_attr_colored_area(uchar x0, uchar y0, uchar x1, uchar y1, uchar attr)
 {
     uchar x, y;
-    
+
     for (x = x0; x <= x1; x++)
     {
         for (y = y0; y <= y1; y++)
@@ -91,4 +91,3 @@ void draw_attr_colored_area(uchar x0, uchar y0, uchar x1, uchar y1, uchar attr)
 void draw_init()
 {
 }
-

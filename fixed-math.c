@@ -8,7 +8,7 @@
 #include "fixed-math.h"
 #include "tables.h"
 
-// If enabled, a faster f_sqr variant is used, but it occupies a 
+// If enabled, a faster f_sqr variant is used, but it occupies a
 // fixed range of addresses 60k-62k
 #define UGLY_F_SQRT
 
@@ -76,7 +76,7 @@ int __CALLEE__ f_multiply(int f_a, int f_b)
 ;   arg1 on A:D:E (sign extended to 24 bits)
 ;   arg2 on B:C (in case that is negative, arg1 and arg2 are both negated, so that it becomes nonegative, unsigned value)
 ;
-; Result (bits 23..9 of the product) computed in A:H or H:L 
+; Result (bits 23..9 of the product) computed in A:H or H:L
 ;
 ; (based on library source - l_long_mult.asm)
 ;
@@ -85,7 +85,7 @@ int __CALLEE__ f_multiply(int f_a, int f_b)
 
    pop    bc   ; arg2
    pop    de   ; arg1
-   
+
    push hl     ; replace return address on stack
 
 ; sign extend arg1 in D:E to A:D:E
@@ -105,14 +105,14 @@ int __CALLEE__ f_multiply(int f_a, int f_b)
 ; but is not detected as saturation, so this case is corrected at the end
 
 ._f_multiply_neg
-   
+
    ; absolute value, i.e. negate arg2 (B:C), careful that -80,00h becomes 80,00h
    and a                       ; clear carry
-   ld     hl,0 
+   ld     hl,0
    sbc    hl,bc
    ld    b,h
    ld    c,l
-   
+
    ; negate arg1 (24 bit A:D:E)
    and a                       ; clear carry
    ld    hl,0
@@ -131,16 +131,16 @@ _f_multiply_arg1_zero:
 ._f_multiply_nonneg
 
    inc b
-   dec b   
+   dec b
    jp z, _f_multiply_p_8b_only
 
    ld  h,b
    ld  l,a
    push hl   ; save the high byte
-   
+
 ; use B_ for arg1 byte 2, A for result byte 2
    ld b,a
-   
+
    xor a
    ld  hl,0
 
@@ -155,19 +155,19 @@ _f_multiply_arg1_zero:
     F_MULT_ITERATION_P_16b(8);
 #asm
 
-   ; shift and sign extend result in A:H to A:H:L 
+   ; shift and sign extend result in A:H to A:H:L
    ld l,h
    ld h,a
    rla       ; trick: A contains H and is not needed anymore
    ld a,0
    sbc a
-   
+
    ; arg1 bits 15..0 to D:E
    ld e,d
    ld d,b
-   
+
    pop bc    ; arg2 bits 15..9 to B, sign extended arg1 bits 23..16 to C
-  
+
 #endasm
     F_MULT_ITERATION_P_8b(9);
     F_MULT_ITERATION_P_8b(10);
@@ -189,18 +189,18 @@ _f_multiply_exit_hl:
     ld a,0x80
     cp h
     ret nz
-    
+
     xor a
     cp l
     ret nz
 
     ; result +0x0080,0000 not representable, return positive saturation
     jp  z,_f_multiply_satur_noneg
-    
+
 _f_multiply_p_8b_only:
     ld b,a   ; use B for arg1 bits 23..16
     xor a
-   
+
     ld  hl,0
 
 #endasm
@@ -220,7 +220,7 @@ _f_multiply_exit_ah:
     ld    l,h
     ld    h,a
     ret
-    
+
 ; ----------  in case of result overflow ------------
 
 ._f_multiply_satur_ah
@@ -228,7 +228,7 @@ _f_multiply_exit_ah:
    ; use the sign of A (bits 31..24) which has correct sign and round to max value
    bit 7,a
    jp nz,_f_multiply_satur_neg
-   
+
 ._f_multiply_satur_noneg
    ld hl,0x7FFF
    ret
@@ -299,12 +299,12 @@ uint __FASTCALL__ distidx_sqrt(unsigned long f16_l)
 {
     /*
      * Generates asm for one iteration of searching in table
-     * 
+     *
      * Params
      *  offset - contains the offset of guess in the table (one bit must be set)
      *  offsetmsb - must be the high byte of offset
      *  offsetlsb - must be the low byte of offset
-     * 
+     *
      * Registers
      *  HL    - pointer to current guess,
      *          if the value of param is higher or equal than a guess at (HL+offset),
@@ -349,7 +349,7 @@ uint __FASTCALL__ distidx_sqrt(unsigned long f16_l)
 
     // Different cases for offset bit in LS byte or MS byte
     // First try to add the offset, and if guess is larger, undo it
-    // (this can be speeded up a bit by aligning _f16_sqrs on 2k 
+    // (this can be speeded up a bit by aligning _f16_sqrs on 2k
     // and using set/res instructions, but complicates things)
 
     #define DISTIDX_ITERATION_MSB(offset, bit) asm(\
@@ -374,9 +374,9 @@ uint __FASTCALL__ distidx_sqrt(unsigned long f16_l)
 
     ld b,h
     ld c,l
-    
+
     ld    hl, ADDR_ALIGNED_FSQRT_LUT + 3   ; pointer to current point
-    
+
 _f_sqrt_loop1:
 
     ; try advancing for the step
@@ -391,21 +391,21 @@ _f_sqrt_loop1:
     DISTIDX_ITERATION_LSB(16, 4);
     DISTIDX_ITERATION_LSB(8, 3);
     DISTIDX_ITERATION_LSB(4, 2);
-    
-#asm    
+
+#asm
 _f16_end:
-    
+
     ; byte offset from pointer
     ld bc, ADDR_ALIGNED_FSQRT_LUT + 3
     and a
     sbc hl,bc
-    
+
     ; index from byte offset
     srl h
     rr  l
     srl h
     rr  l
-    
+
 #endasm
     #undef DISTIDX_ITERATION
     #undef DISTIDX_ITERATION_MSB
@@ -424,12 +424,12 @@ uint __FASTCALL__ distidx_sqrt(unsigned long f16_l)
 {
     /*
      * Generates asm for one iteration of searching in table
-     * 
+     *
      * Params
      *  offset - contains the offset of guess in the table (one bit must be set)
      *  offsetmsb - must be the high byte of offset
      *  offsetlsb - must be the low byte of offset
-     * 
+     *
      * Registers
      *  HL    - pointer to current guess,
      *          if the value of param is higher or equal than a guess at (HL+offset),
@@ -474,7 +474,7 @@ uint __FASTCALL__ distidx_sqrt(unsigned long f16_l)
 
     // Different cases for offset bit in LS byte or MS byte
     // First try to add the offset, and if guess is larger, undo it
-    // (this can be speeded up a bit by aligning _f16_sqrs on 2k 
+    // (this can be speeded up a bit by aligning _f16_sqrs on 2k
     // and using set/res instructions, but complicates things)
 
     #define DISTIDX_ITERATION_MSB(offset, offsetmsb) asm(\
@@ -512,9 +512,9 @@ uint __FASTCALL__ distidx_sqrt(unsigned long f16_l)
 
     ld b,h
     ld c,l
-    
+
     ld    hl, _f16_sqrs+3   ; pointer to current point
-    
+
 _f_sqrt_loop1:
 
     ; try advancing for the step
@@ -529,21 +529,21 @@ _f_sqrt_loop1:
     DISTIDX_ITERATION_LSB(16, 0x10);
     DISTIDX_ITERATION_LSB(8, 0x08);
     DISTIDX_ITERATION_LSB(4, 0x04);
-    
-#asm    
+
+#asm
 _f16_end:
-    
+
     ; byte offset from pointer
     ld bc,_f16_sqrs+3
     and a
     sbc hl,bc
-    
+
     ; index from byte offset
     srl h
     rr  l
     srl h
     rr  l
-    
+
 #endasm
     #undef DISTIDX_ITERATION
     #undef DISTIDX_ITERATION_MSB
@@ -553,7 +553,7 @@ _f16_end:
 #endif // UGLY_F_SQRT
 
 /*
- * Calculates an approximation of square of a 8-bit shifted value (using f16_sqrs). 
+ * Calculates an approximation of square of a 8-bit shifted value (using f16_sqrs).
  * Result is 16-bit shifted value.
  */
 
@@ -578,30 +578,30 @@ _f_sqr_approx:
     ld    hl,0
     sbc    hl,bc
 
-_f_sqr_approx_positive:    
+_f_sqr_approx_positive:
 
         ; distidx from f_dist shifts 4 left, offset from index 2 left
     srl h
     rr l
     srl h
     rr l
-    
+
     ld a,l
     and a,0xFC
     ld l,a
 
     ld bc,_f16_sqrs
     add hl,bc
-    
+
     ; read long to return
     ld c,(hl)    ; temporarily, to not clobber hl
     inc hl
     ld b,(hl)
     inc hl
-    ld e,(hl)    
+    ld e,(hl)
     inc hl
     ld d,(hl)
-    
+
     ld h, b
     ld l, c
 
@@ -680,7 +680,7 @@ void fixed_math_init()
 }
 
 #asm
-   
+
     XDEF _f_multiply
     XDEF _distidx_sqrt
     XDEF _f_sqr_approx
@@ -690,4 +690,3 @@ void fixed_math_init()
     XDEF _f_dist_from_distidx
 
 #endasm
-
