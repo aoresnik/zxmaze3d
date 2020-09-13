@@ -738,7 +738,7 @@ void calc_dist_horiz_edge_n(struct t_maze_sector *sector)
 
                     if (++p_span >= p_end_span)
                     {
-                        break;
+                        return;
                     }
                     if (f_dir_sin[p_span->direction] >= 0)
                     {
@@ -807,7 +807,7 @@ void calc_dist_horiz_edge_s(struct t_maze_sector *sector)
                     p_span->distidx = distidx_hypot_for_a2_b(b, f_dx);
                     if (++p_span >= p_end_span)
                     {
-                        break;
+                        return;
                     }
                     if (f_dir_sin[p_span->direction] <= 0)
                     {
@@ -876,7 +876,7 @@ void calc_dist_vert_edge_e(struct t_maze_sector *sector)
                     p_span->distidx = distidx_hypot_for_a2_b(a, f_dy);
                     if (++p_span >= p_end_span)
                     {
-                        break;
+                        return;
                     }
                     if (f_dir_cos[p_span->direction] <= 0)
                     {
@@ -948,7 +948,7 @@ void calc_dist_vert_edge_w(struct t_maze_sector *sector)
                     p_span->distidx = distidx_hypot_for_a2_b(a, f_dy);
                     if (++p_span >= p_end_span)
                     {
-                        break;
+                        return;
                     }
                     if (f_dir_cos[p_span->direction] >= 0)
                     {
