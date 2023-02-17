@@ -70,7 +70,7 @@ class MapFile:
                 return func
         return None
 
-if len(sys.argv) == 2:
+if len(sys.argv) == 3:
     fuse_profile = FuseProfile(sys.argv[1]);
     map_file = MapFile(sys.argv[2]);
 
